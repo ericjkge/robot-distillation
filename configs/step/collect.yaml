@@ -7,4 +7,5 @@
 chat_template_file: null
 
 collect:
-  out_dir: ${run_dir}/episodes  # one <uid>.pt per successful episode (opd.collect)
+  out_dir: ${run_dir}/episodes  # one <uid>.pt per kept episode (opd.collect)
+  min_score: 1.0  # the episodes kept: those that succeeded (the reward is 1 on success, 0 otherwise)

@@ -21,12 +21,13 @@ FIELDS = ["input_ids", "position_ids", "loss_mask", "multi_modal_inputs"]
 
 
 class CollectionTrainer(EmbodiedEvaluationTrainer):
-    """PEAR's evaluation, which also writes <collect.out_dir>/<uid>.pt for every successful episode."""
+    """PEAR's evaluation, which also writes <collect.out_dir>/<uid>.pt for every episode scoring collect.min_score or
+    more: by default the successful ones."""
 
     def _records(self, batch: tq.KVBatchMeta) -> list[dict]:
         records = super()._records(batch)
         data = tq.kv_batch_get(keys=batch.keys, partition_id=batch.partition_id, select_fields=FIELDS)
-        out_dir = Path(self.config.collect.out_dir)
+        out_dir, min_score = Path(self.config.collect.out_dir), self.config.collect.min_score
         out_dir.mkdir(parents=True, exist_ok=True)
 
         # tensor columns are stacked or jagged, unbinding to each row's own length; the non-tensor column comes back
@@ -40,7 +41,7 @@ class CollectionTrainer(EmbodiedEvaluationTrainer):
             strict=True,
         )
         for record, input_ids, position_ids, response_mask, multi_modal_inputs in rows:
-            if record["score"] > 0:
+            if record["score"] >= min_score:
                 example = sft_example(input_ids, position_ids, response_mask, multi_modal_inputs)
                 torch.save(example, out_dir / f"{record['uid']}.pt")
 

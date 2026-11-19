@@ -18,6 +18,11 @@ model:
   path: ???
   trust_remote_code: true
 
+# the checkpoint also as a Hugging Face model (<ckpt>/global_step_<n>/huggingface), which distillation and evaluation
+# load
+checkpoint:
+  save_contents: [model, optimizer, extra, hf_model]
+
 trainer:
   total_epochs: 2
   logger: ["console", "file"]

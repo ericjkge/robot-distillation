@@ -46,6 +46,8 @@ def test_eval_and_collect_run_one_pass(run_step, tmp_path):
         assert config.trainer.total_training_steps == 1
         assert config.trainer.eval_step == 0
     assert config.collect.out_dir == str(tmp_path / "run" / "episodes")
+    assert config.collect.min_score == 1.0  # successes only
+    assert config.ray_kwargs.ray_init.runtime_env.env_vars.TENSORBOARD_DIR == str(tmp_path / "run" / "tensorboard")
 
 
 def test_distillation_is_reverse_kl_without_task_reward(run_step):
@@ -74,3 +76,4 @@ def test_sft_config_composes(run_step, tmp_path):
     assert config.data.custom_cls.name == "EpisodeDataset"
     assert config.data.pad_mode == "no_padding"
     assert config.model.path == "/models/student"
+    assert "hf_model" in config.checkpoint.save_contents  # what distillation and evaluation load
