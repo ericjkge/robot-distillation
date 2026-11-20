@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# One-time install, on a GPU machine: PEAR's builds take the machine's GPU architecture, or CUDA_ARCH's (e.g. "8.0;8.9"
-# for a cluster of A100s and L40S; MAX_JOBS bounds the compilers' memory). Installs under WORK_DIR
-# PEAR's training environment (verl) and the simulators of BENCHES, downloads the models of MODEL_FILES at their pinned
-# revisions, then runs PEAR's checks of the training environment on the GPU and of a LIBERO simulator.
-#   WORK_DIR=<a directory every machine sees> [BENCHES="libero libero_plus libero_pro"] \
+# One-time install under WORK_DIR: PEAR's training environment (verl) and the simulators of BENCHES, then the models of
+# MODEL_FILES at their pinned revisions. PEAR builds its CUDA extensions for this machine's GPU or, on a machine without
+# one, for CUDA_ARCH, which it then needs (e.g. "8.0;8.9" for A100 and L40S; MAX_JOBS bounds the compilers' memory).
+# On a GPU machine it finishes with PEAR's checks of the training environment and of a LIBERO simulator.
+#   WORK_DIR=<a directory every machine sees> [CUDA_ARCH=...] [BENCHES="libero libero_plus libero_pro"] \
 #     [MODEL_FILES="configs/models/teacher.sh ..."] bash scripts/setup.sh
 source "$(dirname "$0")/common.sh"
 
+if ! nvidia-smi -L > /dev/null 2>&1; then
+  : "${CUDA_ARCH:?no GPU here: set CUDA_ARCH to the compute capabilities to build for}"
+fi
 read -r -a BENCH_LIST <<< "${BENCHES:-libero libero_plus libero_pro}"
 read -r -a MODEL_LIST <<< "${MODEL_FILES:-$(echo "$ROOT"/configs/models/*.sh)}"
 
@@ -19,7 +22,8 @@ for model_file in "${MODEL_LIST[@]}"; do
   MODEL_FILE=$model_file bash "$PEAR/scripts/download_model.sh"
 done
 
-# PEAR's own checks (its libero_run target): the training environment on this GPU, then one LIBERO step
+# PEAR's own checks (its libero_run target), on a GPU machine: the training environment on its GPU, then one LIBERO step
+nvidia-smi -L > /dev/null 2>&1 || exit 0
 (
   export LOCAL_DIR=$WORK_DIR/cache/environment_test
   # shellcheck source=/dev/null
