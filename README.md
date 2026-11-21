@@ -62,6 +62,9 @@ cluster:
 - **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
   and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step.
 
+Ray needs more than 32 CPUs: PEAR's data queue starts 32 storage units of one CPU each and waits until all of them are
+placed. With fewer CPUs, lower their number with `transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`.
+
 ```bash
 M=$WORK_DIR/models R=$WORK_DIR/runs
 
