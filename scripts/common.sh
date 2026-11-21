@@ -8,6 +8,8 @@ WORK_DIR=${WORK_DIR:?the directory scripts/setup.sh installed into (environments
 VERL_ENV=${VERL_ENV:-$WORK_DIR/envs/verl}
 LOCAL_DIR=${LOCAL_DIR:-/var/tmp/${USER:-$(id -un)}/pear}  # node-local compile caches
 export WORK_DIR PEAR
+# Slurm sets AMD's ROCR_VISIBLE_DEVICES beside CUDA_VISIBLE_DEVICES, and verl's workers refuse both
+if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then unset ROCR_VISIBLE_DEVICES; fi
 
 # what every process imports: PEAR, its patched verl, and this repository's opd
 PYTHON_PATH=$PEAR/pear/utils/sitecustomize:$PEAR:$PEAR/3rdparty/verl/src:$ROOT/src
