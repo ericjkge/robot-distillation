@@ -83,6 +83,9 @@ pear_args() {
     actor_rollout_ref.rollout.max_model_len="$MAX_MODEL_LEN"
     +actor_rollout_ref.rollout.limit_images=$((MAX_MODEL_LEN / $(model_image_tokens 512 512)))
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$bench_dir/tool_config.yaml"
+    # PEAR's configs name these relative to its root, the directory its own launcher starts Ray in
+    data.custom_cls.path="$PEAR/pear/agent_loop/dataset.py"
+    actor_rollout_ref.rollout.agent.agent_loop_config_path="$PEAR/pear/agent_loop/config.yaml"
     trainer.validation_data_dir="$RUN/val_dumps"
     trainer.experiment_name="$(basename "$RUN")"
     trainer.logger='["console","file","tensorboard"]'
