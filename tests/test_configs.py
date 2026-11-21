@@ -73,6 +73,7 @@ def test_sft_config_composes(run_step, tmp_path):
     _, args = run_step("sft.sh", MODEL="/models/student", EPISODES_DIR=tmp_path / "ep", NGPUS=1)
     config = compose_step("sft.sh", args)
     assert config.data.custom_cls.path == "pkg://opd.sft_data"
+    assert config.engine.strategy == "fsdp2"
     assert config.data.custom_cls.name == "EpisodeDataset"
     assert config.data.pad_mode == "no_padding"
     assert config.model.path == "/models/student"

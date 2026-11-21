@@ -18,6 +18,10 @@ model:
   path: ???
   trust_remote_code: true
 
+# FSDP2, as PEAR trains its actor
+engine:
+  strategy: fsdp2
+
 # the checkpoint also as a Hugging Face model (<ckpt>/global_step_<n>/huggingface), which distillation and evaluation
 # load
 checkpoint:
