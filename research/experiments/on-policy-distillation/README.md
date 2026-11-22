@@ -174,6 +174,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - CPU suite on 4e45f31: job 60454321 (`repo_tests/run.sbatch`: `short`, 2 CPUs, 6G, 01:00:00). Job 60454290 ran on the earlier draft and was cancelled.
   - SFT pilot, job 60454322 (`sft/pilot.sbatch`: `gpu_requeue`, gres gpu:l40s:2, 00:45:00, 12 CPUs, 96G): the 4B on the two smoke episodes with SP 2, 2 updates.
 - **2026-11-22:** the download (60454085) finished in 2.5 minutes: teacher 52 GB, 9B 19 GB. The CPU suite (60454321) passed on 4e45f31: 75 tests. The README title on `main` is now "On-Policy Distillation for Robot-Use Agents" (bfba748), at the human's request. 4e45f31 goes to `main` once the SFT pilot passes.
+- **2026-11-22, SFT pilot 60454322 failed, then resubmitted.** Sequence parallelism runs for this model in verl's SFT trainer: step 1 trained with loss 0.47. Step 2 ran out of GPU memory (42.6 GB) in AdamW's step, where the manual optimizer offload brings the 4B's fp32 states onto the GPU. Part 2's SFT had the same 42.6 GB peak without SP and fit only barely; at verl's old lr of 1e-3 its loss went from 0.47 to 15.9 in one step. The fix is skeleton 689d325: FSDP2's CPU offload (`engine.offload_policy`), which keeps parameters, gradients and the update in host memory (the nodes have 500 GB to 1 TB). Pilot 2 is job 60459683 (`sft/pilot.sbatch`: `gpu_requeue`, gres gpu:l40s:2, 00:45:00, 12 CPUs, 128G; 3 updates). The CPU suite on 689d325 is job 60459684.
 
 ## Results
 
