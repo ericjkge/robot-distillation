@@ -150,6 +150,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
     - Cause: `ray_node.sh` called `nproc` after sourcing PEAR's `gpu_process_variables.sh`. That sets `OMP_NUM_THREADS=8`, and GNU `nproc` honors it, so every machine offered Ray 8 CPUs.
     - Fix on the skeleton (d6e44f6): the CPUs are counted before PEAR's variables.
     - I cancelled the job at 02:45 and resubmitted part 3 as 60409953: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 16 CPU, 96G, on d6e44f6, reusing `collect` and `sft` as before.
+- **2026-11-22, the skeleton is on `main` through 52bbbb3, at the human's request.** That covers everything collect, SFT and the SFT model's eval have run on, plus the trainer-GPU fix, which the CPU suite (71 passed) covers. d6e44f6 (Ray's CPU count) stays local until part 3 passes.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results
