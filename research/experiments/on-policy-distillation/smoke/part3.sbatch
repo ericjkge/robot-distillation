@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5: a short, restartable job
 #SBATCH --gres=gpu:l40s:3
 #SBATCH --time=01:15:00
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=96G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/smoke-part3-%j.out
 source /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/smoke/env.sh

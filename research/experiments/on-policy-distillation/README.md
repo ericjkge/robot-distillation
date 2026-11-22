@@ -144,6 +144,12 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - Part 3 (60407949) failed in 47 s: the fresh checkout of 52bbbb3 had no verl source. PEAR builds that source with `checkout_verl.sh`, and part 1's setup had run it only in 2055b84's checkout.
     - `smoke/env.sh` now runs `checkout_verl.sh` after a clone.
     - Resubmitted as 60408222, with the same header.
+  - The CPU suite (60407948) passed: 71 tests on 52bbbb3, including the new sequence-parallelism test.
+  - Part 3 (60408222) got past the device mesh: the actor and the student's rollout server started. Then it hung from 02:27, all GPUs idle.
+    - Ray's teacher placement group ({1 GPU, `trainer`, 3 CPU}) stayed pending, because Ray had started with 8 CPUs instead of the job's 12.
+    - Cause: `ray_node.sh` called `nproc` after sourcing PEAR's `gpu_process_variables.sh`. That sets `OMP_NUM_THREADS=8`, and GNU `nproc` honors it, so every machine offered Ray 8 CPUs.
+    - Fix on the skeleton (d6e44f6): the CPUs are counted before PEAR's variables.
+    - I cancelled the job at 02:45 and resubmitted part 3 as 60409953: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 16 CPU, 96G, on d6e44f6, reusing `collect` and `sft` as before.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results
