@@ -29,11 +29,14 @@ distillation:
   teacher_models:
     teacher_model:
       model_path: ???
+      # served by PEAR's vLLM server, as the student is: its config class, with the keys that server reads
       inference:
+        _target_: pear.rollout.config.PearRolloutConfig
         tensor_model_parallel_size: ???
+        fp32_modules: ${actor_rollout_ref.rollout.fp32_modules}  # the family's, as the teacher is a Qwen3.5 as well
         custom:
           lmcache:
-            enable: false  # PEAR's servers read this block; the teacher only prefills, so it has no KV tier to offload
+            enable: false  # the teacher only prefills, so it has no KV tier to offload
   distillation_loss:
     loss_mode: k1
     use_policy_gradient: true
