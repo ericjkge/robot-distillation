@@ -19,9 +19,11 @@ model:
   path: ???
   trust_remote_code: true
 
-# FSDP2, as PEAR trains its actor
+# FSDP2, as PEAR trains its actor, with its CPU offload: the fp32 parameters, gradients and AdamW update stay in host
+# memory (a 9B's are about 150 GB), the GPUs holding the layers in use
 engine:
   strategy: fsdp2
+  offload_policy: true
 
 # the checkpoint also as a Hugging Face model (<ckpt>/global_step_<n>/huggingface), which distillation and evaluation
 # load
