@@ -9,6 +9,7 @@ source "$(dirname "$0")/common.sh"
 ROLE=${1:?trainer | rollout | teacher | all}
 HEAD_ADDRESS=${2:-}
 GPUS=$(nvidia-smi -L | wc -l)
+CPUS=${NUM_CPUS:-$(nproc)}  # before PEAR's variables: nproc counts OMP_NUM_THREADS, which they set
 LIBERO_SERVERS=${LIBERO_SERVERS:-16}  # simulator processes per rollout machine, rendering on its CPUs
 
 # PEAR places the actor on the "trainer" resource, the replicas on "rollout" and the simulators on "libero"; the
@@ -31,4 +32,4 @@ mkdir -p "$LOCAL_DIR"
 # shellcheck source=/dev/null
 source "$PEAR/scripts/gpu_process_variables.sh" "$VERL_ENV"
 RAY_TMPDIR=$LOCAL_DIR/ray PYTHONPATH=$PYTHON_PATH exec "$VERL_ENV/bin/ray" start "${NODE_ARGS[@]}" \
-  --num-gpus="$GPUS" --num-cpus="${NUM_CPUS:-$(nproc)}" --resources="$RESOURCES" --block
+  --num-gpus="$GPUS" --num-cpus="$CPUS" --resources="$RESOURCES" --block
