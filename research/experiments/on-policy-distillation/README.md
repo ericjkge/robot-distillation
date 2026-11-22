@@ -131,6 +131,11 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - Part 2 (`smoke/part2.sbatch`) runs SFT and the eval of the SFT model: `gpu_requeue`, `gpu:l40s:2`, `01:00:00`, 12 CPU, 96G. Job 60398446.
   - Part 3 (`smoke/part3.sbatch`) runs distill, export and the eval of the distilled model: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 12 CPU, 96G. Job 60398447, with `afterok:60398446`.
   - Both run on code 2055b84 and reuse 60339780's collect output.
+  - Part 2 (60398446) passed in 13 min 54 s, from 01:22 to 01:36 on Nov 22. Peak host memory was 78 GB.
+    - SFT on 2 GPUs (FSDP2 with `optimizer_offload`) completed both updates and saved `global_step_2` with its Hugging Face model, in 325 s.
+    - The eval of that model ran both episodes in 502 s. It took 0 actions (success 0.0), like the base model: 2 updates on 2 episodes do not change its behavior.
+    - `check.py sft eval-sft` passes.
+  - Part 3 (60398447) is next in the queue.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results
