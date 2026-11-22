@@ -169,6 +169,10 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - `research/bin/submit`'s per-direction limits are now 5 days, 8 GPUs (one machine), 2,048 GB and 16 jobs. It also refuses GPU jobs outside `gpu_requeue` (billed at 0.1 per GPU instead of 5) and ignores trailing comments in header values. The penalty rules still apply: memory near 1.5x the measured peak. `gpu_requeue` caps a job at 20 CPUs.
   - Download of the teacher and the 9B student, job 60454085: `short`, 4 CPUs, 8G, 03:00:00 (`collect/download.sbatch`, code ec309b8).
   - Teacher collection, one job per suite after the download (afterok), code e00b38c: libero_goal 60454154, libero_spatial 60454155, libero_object 60454156, libero_10 60454157. Header (`collect/collect.sbatch`): `gpu_requeue`, `--requeue`, gres gpu:l40s:4, 2-00:00:00, 20 CPUs, 128G. Each runs the 27B teacher as one TP4 replica at xhigh effort over its suite's 500 episodes (PEAR's protocol, 160k-token responses), with 8 simulators and 4 storage units, and keeps the successes under `runs/collect-e00b38c/<suite>/episodes`. The 27B has not yet run on this hardware; memory is unmeasured.
+- **2026-11-22, human decisions on SFT:** an even cap of 25 successful episodes per task, drawn at random, keeping all of a task's when it has fewer (the human chose this over keeping every episode with task-balanced sampling). The human approved the other settings: lr 1e-5 with a cosine schedule and 5% warmup (verl's default is a constant 1e-3), a global batch of 32, 3 epochs, and Ulysses sequence parallelism across the job's GPUs for episodes up to 164k tokens.
+  - Skeleton 4e45f31 (not yet on `main`): `src/opd/select_episodes.py` draws the set from the collection runs into one directory; `configs/step/sft.yaml` and `scripts/sft.sh` carry the settings.
+  - CPU suite on 4e45f31: job 60454321 (`repo_tests/run.sbatch`: `short`, 2 CPUs, 6G, 01:00:00). Job 60454290 ran on the earlier draft and was cancelled.
+  - SFT pilot, job 60454322 (`sft/pilot.sbatch`: `gpu_requeue`, gres gpu:l40s:2, 00:45:00, 12 CPUs, 96G): the 4B on the two smoke episodes with SP 2, 2 updates.
 
 ## Results
 
