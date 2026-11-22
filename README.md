@@ -22,7 +22,7 @@ distillation) avoids the compounding errors of imitating teacher trajectories al
 | Step | | Script |
 | --- | --- | --- |
 | 1. Teacher data | Run the teacher on LIBERO's four suites. Keep each successful episode's full multi-round context: images, reasoning and actions. | `scripts/collect.sh` |
-| 2. SFT | Fine-tune each student on the teacher's episodes, with the loss on every generated token, in the same context format as at inference. | `scripts/sft.sh` |
+| 2. SFT | Fine-tune each student on the teacher's episodes, up to 25 per task (`src/opd/select_episodes.py`), with the loss on every generated token, in the same context format as at inference. | `scripts/sft.sh` |
 | 3. On-policy distillation | Starting from the SFT checkpoint, at each step the student runs LIBERO episodes, the teacher scores every student token, and the student takes one policy-gradient step on the per-token reverse KL. There is no task reward. | `scripts/distill.sh` |
 | 4. Evaluation | Measure the success rate of any model on LIBERO, LIBERO-Pro or LIBERO-Plus. | `scripts/eval.sh` |
 
@@ -71,8 +71,9 @@ M=$WORK_DIR/models R=$WORK_DIR/runs
 # 1. teacher episodes, at xhigh effort
 MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts/collect.sh
 
-# 2. SFT
-MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/teacher/episodes RUN=$R/sft-9b bash scripts/sft.sh
+# 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer)
+python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher
+MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/sft-set RUN=$R/sft-9b bash scripts/sft.sh
 
 # 3. on-policy distillation: here three machines, one per role
 sbatch --nodes=3 --export=ALL,ROLES="trainer rollout teacher",MODEL_FILE=configs/models/qwen3_5_9b.sh,\

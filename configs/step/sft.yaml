@@ -6,7 +6,8 @@
 data:
   train_files: ???  # the directory opd.collect wrote
   val_files: null
-  train_max_samples: 1000
+  train_max_samples: -1  # the set opd.select_episodes drew: up to 25 episodes per task
+  train_batch_size: 32
   pad_mode: no_padding
   max_length: 163840  # PEAR's LIBERO training budget: 4096 prompt + 160000 response tokens
   truncation: error
@@ -27,6 +28,12 @@ engine:
 checkpoint:
   save_contents: [model, optimizer, extra, hf_model]
 
+# verl's optimizer default (a constant 1e-3) is for training from scratch
+optim:
+  lr: 1e-5
+  lr_scheduler_type: cosine
+  lr_warmup_steps_ratio: 0.05
+
 trainer:
-  total_epochs: 2
+  total_epochs: 3
   logger: ["console", "file"]

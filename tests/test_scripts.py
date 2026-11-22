@@ -141,6 +141,9 @@ def test_sft(run_step, tmp_path):
     assert value(args, "data.train_files") == str(tmp_path / "ep")
     assert value(args, "model.path") == "/models/student"
     assert value(args, "trainer.total_epochs") == "1"
+    # each episode split across the 2 GPUs
+    assert value(args, "engine.ulysses_sequence_parallel_size") == "2"
+    assert value(args, "data.max_token_len_per_gpu") == "81920"
 
 
 @pytest.mark.parametrize("missing", ["MODEL", "RUN", "ROLLOUT_NNODES"])
