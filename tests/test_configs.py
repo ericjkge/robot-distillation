@@ -65,6 +65,10 @@ def test_distillation_is_reverse_kl_without_task_reward(run_step):
     teacher = config.distillation.teacher_models.teacher_model.inference
     assert teacher._target_ == "pear.rollout.config.PearRolloutConfig"  # PEAR's server reads its keys
     assert list(teacher.fp32_modules) == ["visual", "A_log"]
+    # the family's vLLM settings, as the student's server has them: FlashAttention takes no fp32 vision tower
+    assert teacher.engine_kwargs == config.actor_rollout_ref.rollout.engine_kwargs
+    assert teacher.engine_kwargs.vllm.mm_encoder_attn_backend == "TORCH_SDPA"
+    assert teacher.dtype == config.actor_rollout_ref.rollout.dtype
     assert teacher.custom.lmcache.enable is False
     # RL-only machinery off: no group filter (no reward variance without a task reward), no reference KL
     assert not config.algorithm.filter_groups.enable

@@ -33,7 +33,11 @@ distillation:
       inference:
         _target_: pear.rollout.config.PearRolloutConfig
         tensor_model_parallel_size: ???
-        fp32_modules: ${actor_rollout_ref.rollout.fp32_modules}  # the family's, as the teacher is a Qwen3.5 as well
+        # the family's, as the teacher is a Qwen3.5 as well: its fp32 weights, and vLLM's settings for them (the vision
+        # tower's attention in SDPA, which takes fp32)
+        dtype: ${actor_rollout_ref.rollout.dtype}
+        fp32_modules: ${actor_rollout_ref.rollout.fp32_modules}
+        engine_kwargs: ${actor_rollout_ref.rollout.engine_kwargs}
         custom:
           lmcache:
             enable: false  # the teacher only prefills, so it has no KV tier to offload
