@@ -1,5 +1,5 @@
 #!/bin/bash
-# GPU smoke test, part 1 of 2, on one GPU: PEAR's checks, then teacher-episode collection at the smallest size that runs
+# GPU smoke test, part 1 of 3, on one GPU: PEAR's checks, then teacher-episode collection at the smallest size that runs
 # its real code path: 2 LIBERO episodes, all kept (collect.min_score=0: a base 4B seldom succeeds). check.py verifies
 # its outputs.
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5: a short, restartable job

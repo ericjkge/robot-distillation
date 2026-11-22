@@ -127,6 +127,11 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - `check.py collect` on that run passes: 2 episodes written, 5,129 and 5,140 tokens. The base 4B took 0 actions in either episode (success 0.0). It reasons until the 4,096-token response cap without acting, which is expected of an untuned student. Collect at the teacher's real scale is still unexercised; this test checks the mechanics only.
   - Restructured. Part 1 is the checks plus collect (45 min, 64G). Part 2 is SFT on 2 GPUs (FSDP2 shards the fp32 parameters and gradients, about 8 GB each per GPU, plus `optimizer_offload`: Adam's 16 GB per GPU is loaded only for the update), eval of the SFT model, distill, export, and eval of the distilled model (1h45, 96G, 3×L40S). No offload policy is needed, and no main change.
   - Part 2 (60340381) was submitted alone on 2055b84, reusing this collect's episodes. Part 2's old dependent job 60339781 had been cancelled with part 1.
+- **2026-11-21, part 2 split in two; jobs now go through `research/bin/submit`.** Part 2 (60340381) waited about 20 hours for 3 L40S GPUs on one node. Its estimated start moved between 07:52 on Nov 21 and 04:30 on Nov 23. I cancelled it and split it in two:
+  - Part 2 (`smoke/part2.sbatch`) runs SFT and the eval of the SFT model: `gpu_requeue`, `gpu:l40s:2`, `01:00:00`, 12 CPU, 96G. Job 60398446.
+  - Part 3 (`smoke/part3.sbatch`) runs distill, export and the eval of the distilled model: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 12 CPU, 96G. Job 60398447, with `afterok:60398446`.
+  - Both run on code 2055b84 and reuse 60339780's collect output.
+  - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results
 

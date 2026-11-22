@@ -1,4 +1,4 @@
-"""Checks the steps a smoke job ran (part1.sbatch, part2.sbatch) and appends its record to
+"""Checks the steps a smoke job ran (part1.sbatch to part3.sbatch) and appends its record to
 runs/on-policy-distillation.jsonl.
     check.py <runs dir> <code commit> <job> <step>...    steps: collect sft eval-sft distill eval-distilled"""
 
