@@ -141,6 +141,9 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - Resubmitted through `submit`:
     - Part 3, 60407949: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 12 CPU, 96G, on 52bbbb3. Its run directory `runs/smoke-52bbbb3` links `collect` and `sft` from `smoke-2055b84`; the fix does not touch either step.
     - The CPU suite, 60407948: `short`, 2 CPU, 6G, `01:00:00`, on 52bbbb3.
+  - Part 3 (60407949) failed in 47 s: the fresh checkout of 52bbbb3 had no verl source. PEAR builds that source with `checkout_verl.sh`, and part 1's setup had run it only in 2055b84's checkout.
+    - `smoke/env.sh` now runs `checkout_verl.sh` after a clone.
+    - Resubmitted as 60408222, with the same header.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results

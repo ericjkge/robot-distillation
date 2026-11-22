@@ -10,6 +10,7 @@ if [ ! -d "$CODE" ]; then
   git clone -q /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation "$CODE"
   git -C "$CODE" checkout -q "$CODE_SHA"
   git -C "$CODE" submodule update -q --init
+  bash "$CODE/third_party/pear/3rdparty/verl/scripts/checkout_verl.sh"  # PEAR's patched verl, which setup.sh builds
 fi
 cd "$CODE"
 echo "code $(git rev-parse HEAD) on $(hostname): $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2> /dev/null || echo no GPU)"
