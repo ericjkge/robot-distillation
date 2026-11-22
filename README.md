@@ -1,4 +1,4 @@
-# On-Policy Distillation for Robot-Use Reasoning Models
+# On-Policy Distillation for Robot-Use Agents
 
 ## Motivation
 
