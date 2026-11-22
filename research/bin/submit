@@ -7,11 +7,11 @@
 # prompts, so these limits are the only gate.
 set -euo pipefail
 
-MAX_MINUTES=720   # per job
-MAX_GPUS=4        # per job: one GPU machine
-MAX_MEM_GB=192    # per job; O2 deprioritizes users whose jobs mostly use under half their requested RAM, so request
+MAX_MINUTES=7200  # per job: the partitions' own 5-day cap (raised at the human's direction, 2026-11-22)
+MAX_GPUS=8        # per job: the largest GPU machine (jobs are single-node)
+MAX_MEM_GB=2048   # per job; O2 deprioritizes users whose jobs mostly use under half their requested RAM, so request
                   # about 1.5x a job's measured peak (sacct -o MaxRSS), not this cap
-MAX_JOBS=2        # queued or running, per direction
+MAX_JOBS=16       # queued or running, per direction
 
 SLUG="${1:-}"; shift || true
 SCRIPT="${1:-}"; shift || true
@@ -25,7 +25,7 @@ fi
 command -v sbatch >/dev/null 2>&1 || { echo "sbatch not found — are you on O2?" >&2; exit 1; }
 
 # Last occurrence wins, as in sbatch.
-hdr() { grep -E "^#SBATCH[[:space:]]+--$1" "$SCRIPT" | tail -n1 | sed -E "s/.*--$1[= ]//" || true; }
+hdr() { grep -E "^#SBATCH[[:space:]]+--$1" "$SCRIPT" | tail -n1 | sed -E "s/.*--$1[= ]//; s/[[:space:]]+#.*//" || true; }
 refuse() { echo "  REFUSING: $*" >&2; exit 1; }
 
 PART=$(hdr partition); TIME=$(hdr time); GPUS=$(hdr gres); MEM=$(hdr mem); CPUS=$(hdr cpus-per-task); NODES=$(hdr nodes)
@@ -64,6 +64,8 @@ if [[ "$GPUS" == gpu* ]]; then
   N_GPU=${GPUS##*:}; [[ "$N_GPU" =~ ^[0-9]+$ ]] || N_GPU=1
 fi
 (( N_GPU <= MAX_GPUS )) || refuse "--gres=$GPUS exceeds the ${MAX_GPUS}-GPU limit."
+# no priority penalty: GPU jobs run on the preemptible partition, billed at 0.1 per GPU instead of 5
+(( N_GPU == 0 )) || [[ "$PART" == gpu_requeue ]] || refuse "GPU jobs go on --partition=gpu_requeue, which costs no priority."
 [[ "$MEM" =~ ^([0-9]+)([MG]?)B?$ ]] || refuse "--mem=${MEM:-<none>}; set --mem in the header, e.g. --mem=6G."
 MEM_MB=${BASH_REMATCH[1]}; [[ "${BASH_REMATCH[2]}" == M ]] || MEM_MB=$(( MEM_MB * 1024 ))
 (( MEM_MB <= MAX_MEM_GB * 1024 )) || refuse "--mem=$MEM exceeds the ${MAX_MEM_GB}G limit; request about 1.5x the measured peak (sacct -o MaxRSS)."

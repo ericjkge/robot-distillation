@@ -1,6 +1,6 @@
 ---
 slug: on-policy-distillation
-status: blocked
+status: running
 hypothesis: On-policy reverse-KL distillation from the PEAR 27B teacher makes a Qwen3.5-9B student succeed more often on LIBERO than SFT alone, and more often than the teacher at low effort, while taking less time per episode than the teacher at xhigh.
 kill_criterion: After on-policy distillation, the 9B student's LIBERO success rate (PEAR protocol, 2,000 episodes) is not more than 2 SE above its SFT-only checkpoint, or not above 21.9%, or its mean time per episode is not below the teacher's at xhigh.
 best_metric:
@@ -165,6 +165,10 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - The CPU suite (60413270) passed: 71 tests on e00b38c. e00b38c is on `main`. Part 3 (60413271) is queued, estimated to start at 07:00.
 - **2026-11-22, the skeleton is on `main` through 52bbbb3, at the human's request.** That covers everything collect, SFT and the SFT model's eval have run on, plus the trainer-GPU fix, which the CPU suite (71 passed) covers. d6e44f6 (Ray's CPU count) stays local until part 3 passes.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
+- **2026-11-22, human direction in session: collect all the teacher episodes first; limits raised, without priority penalties.**
+  - `research/bin/submit`'s per-direction limits are now 5 days, 8 GPUs (one machine), 2,048 GB and 16 jobs. It also refuses GPU jobs outside `gpu_requeue` (billed at 0.1 per GPU instead of 5) and ignores trailing comments in header values. The penalty rules still apply: memory near 1.5x the measured peak. `gpu_requeue` caps a job at 20 CPUs.
+  - Download of the teacher and the 9B student, job 60454085: `short`, 4 CPUs, 8G, 03:00:00 (`collect/download.sbatch`, code ec309b8).
+  - Teacher collection, one job per suite after the download (afterok), code e00b38c: libero_goal 60454154, libero_spatial 60454155, libero_object 60454156, libero_10 60454157. Header (`collect/collect.sbatch`): `gpu_requeue`, `--requeue`, gres gpu:l40s:4, 2-00:00:00, 20 CPUs, 128G. Each runs the 27B teacher as one TP4 replica at xhigh effort over its suite's 500 episodes (PEAR's protocol, 160k-token responses), with 8 simulators and 4 storage units, and keeps the successes under `runs/collect-e00b38c/<suite>/episodes`. The 27B has not yet run on this hardware; memory is unmeasured.
 
 ## Results
 
