@@ -31,6 +31,9 @@ distillation:
       model_path: ???
       inference:
         tensor_model_parallel_size: ???
+        custom:
+          lmcache:
+            enable: false  # PEAR's servers read this block; the teacher only prefills, so it has no KV tier to offload
   distillation_loss:
     loss_mode: k1
     use_policy_gradient: true

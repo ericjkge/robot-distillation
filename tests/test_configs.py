@@ -62,6 +62,7 @@ def test_distillation_is_reverse_kl_without_task_reward(run_step):
         False,
     )
     assert config.distillation.teacher_models.teacher_model.model_path == "/models/teacher"
+    assert config.distillation.teacher_models.teacher_model.inference.custom.lmcache.enable is False
     # RL-only machinery off: no group filter (no reward variance without a task reward), no reference KL
     assert not config.algorithm.filter_groups.enable
     assert not config.actor_rollout_ref.actor.use_kl_loss
