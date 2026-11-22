@@ -135,7 +135,12 @@ The 4B student is reported alongside the 9B student but does not decide the dire
     - SFT on 2 GPUs (FSDP2 with `optimizer_offload`) completed both updates and saved `global_step_2` with its Hugging Face model, in 325 s.
     - The eval of that model ran both episodes in 502 s. It took 0 actions (success 0.0), like the base model: 2 updates on 2 episodes do not change its behavior.
     - `check.py sft eval-sft` passes.
-  - Part 3 (60398447) is next in the queue.
+  - Part 3 (60398447) failed after 4 min 55 s, at 02:17 on Nov 22. Distill's actor failed while building its device mesh (an `AssertionError` in torch's `init_device_mesh`).
+    - Cause: `configs/hardware/generic.sh` set the actor's Ulysses sequence parallelism to the machine's 3 GPUs, but the trainer had only 1 (`TRAINER_GPUS=1`).
+    - Fix on the skeleton (52bbbb3): SP is now `${TRAINER_GPUS:-$GPUS_PER_NODE}`, with a test.
+  - Resubmitted through `submit`:
+    - Part 3, 60407949: `gpu_requeue`, `gpu:l40s:3`, `01:15:00`, 12 CPU, 96G, on 52bbbb3. Its run directory `runs/smoke-52bbbb3` links `collect` and `sft` from `smoke-2055b84`; the fix does not touch either step.
+    - The CPU suite, 60407948: `short`, 2 CPU, 6G, `01:00:00`, on 52bbbb3.
   - From 60335814 to 60340381, I submitted with `sbatch` directly, outside `research/bin/submit`. That was against the operating rules. The first copy of this split (60398425 and 60398426) went the same way and was cancelled before it ran. Both jobs above went through `submit`.
 
 ## Results
