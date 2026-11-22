@@ -63,6 +63,11 @@ def test_generic_hardware_turns_off_pears_tuned_kernels(run_step, step):
     assert value(args, "actor_rollout_ref.actor.fsdp_config.ulysses_sequence_parallel_size") == "4"
 
 
+def test_sequence_parallelism_spans_the_trainers_gpus(run_step):
+    _, args = run_step("distill.sh", GPU="generic", **{**STEPS["distill.sh"], "TRAINER_GPUS": "1"})
+    assert value(args, "actor_rollout_ref.actor.fsdp_config.ulysses_sequence_parallel_size") == "1"
+
+
 def test_h100_keeps_pears_recipe(run_step):
     _, args = run_step("eval.sh", GPU="h100", **STEPS["eval.sh"])
     assert "flash_attention_3" in value(args, "actor_rollout_ref.model.override_config.attn_implementation")
