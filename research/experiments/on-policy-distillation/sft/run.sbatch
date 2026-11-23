@@ -38,5 +38,5 @@ echo "code $(git rev-parse HEAD) on $(hostname); $(ls "$SET"/*.pt | wc -l) episo
 
 start=$SECONDS
 MODEL=$WORK_DIR/models/$STUDENT EPISODES_DIR=$SET RUN=$OUT/runs/sft-${CODE_SHA:0:7}/$STUDENT NGPUS=4 \
-  bash scripts/sft.sh
+  bash scripts/sft.sh trainer.save_freq=10 trainer.max_ckpt_to_keep=2  # a requeued job resumes from the latest
 echo "sft $STUDENT: $((SECONDS - start)) s"
