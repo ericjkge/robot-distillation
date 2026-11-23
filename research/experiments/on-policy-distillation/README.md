@@ -24,14 +24,14 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 00:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 01:16. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
 | Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | queued; each stops once every task has 25 |
-| Base baselines, 9B (goal, spatial, object, libero_10) | 60483190, 60483191, 60483192, 60483193 | queued |
+| Base baselines, 9B (goal, spatial, object, libero_10) | 60483190, 60483191, 60483192, 60483193 | first three running since 00:36–00:53 |
 | Base baselines, 4B (same order) | 60483194, 60483195, 60483196, 60483197 | queued |
 | Smoke part 3 (distill, export, eval) | 60471092 | queued; earlier attempt ran out of host memory at 96G, now 192G |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
@@ -52,6 +52,7 @@ All of these except part 3 run `main` bf9b274.
 - **Tests on bf9b274:** the CPU suite passes 75 of 75. `repo_tests/two_clusters.sbatch` runs two clusters on one node, under Slurm (60482850) and off it (60482851). It passes both times: separate clusters, the short run's exit leaves the long one's task to complete, no processes are left over, and a node that cannot start fails its run in 44 s. On the old code it fails (60482296).
 
 **Verified on GPU**
+- Base 9B baselines run, two of them sharing one A6000 node. After about 40 minutes: 38 episodes, 0 successes; most end at once because the reply is not a valid action ("parse"), and the rest run out of steps. About 10 episodes per 25 minutes per job, so about 20 hours per suite. Host memory is 31–35 GB of 64G.
 - Collect, SFT (sequence parallelism and CPU offload) and eval work end to end on the smoke test.
 - The 27B teacher runs as one TP4 replica on 4 L40S, using 75 GB of host memory.
 - Distill reaches the student's update; export and eval of the distilled model are not yet confirmed (part 3).
@@ -63,7 +64,7 @@ All of these except part 3 run `main` bf9b274.
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
-- Baselines, code bf9b274 (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (memory unmeasured); 8 episodes at once.
+- Baselines, code bf9b274 (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once.
 - SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
 - Smoke part 3, code 35a76df (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
@@ -73,7 +74,7 @@ None yet.
 
 ## Next step
 
-Check the first collection job's KV cache (it should stay below full, with prefix-cache hits), then record each baseline suite's success rate and time per episode as its job finishes, and resize the baseline memory from the first job's MaxRSS.
+When libero_goal collection starts (around 03:00), check the teacher's KV cache stays below full with prefix-cache hits. Record each baseline suite's success rate and time per episode as its job finishes.
 
 ## Blocked on
 
