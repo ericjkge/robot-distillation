@@ -24,12 +24,14 @@ esac
 
 if [ -n "$HEAD_ADDRESS" ]; then
   NODE_ARGS=(--address="$HEAD_ADDRESS")
+  PORT=${HEAD_ADDRESS##*:}
 else
-  NODE_ARGS=(--head --port="${PORT:-6379}")
+  PORT=${PORT:-6379}
+  NODE_ARGS=(--head --port="$PORT")
 fi
 
-mkdir -p "$LOCAL_DIR"
+mkdir -p "$LOCAL_DIR/ray/$PORT"  # by the cluster's port: another cluster on this machine has its own
 # shellcheck source=/dev/null
 source "$PEAR/scripts/gpu_process_variables.sh" "$VERL_ENV"
-RAY_TMPDIR=$LOCAL_DIR/ray PYTHONPATH=$PYTHON_PATH exec "$VERL_ENV/bin/ray" start "${NODE_ARGS[@]}" \
+RAY_TMPDIR=$LOCAL_DIR/ray/$PORT PYTHONPATH=$PYTHON_PATH exec "$VERL_ENV/bin/ray" start "${NODE_ARGS[@]}" \
   --num-gpus="$GPUS" --num-cpus="$CPUS" --resources="$RESOURCES" --block

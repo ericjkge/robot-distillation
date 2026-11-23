@@ -16,7 +16,10 @@ if [ -n "${RAY_ADDRESS:-}" ]; then
   exec bash "$STEP_SCRIPT" "$@"
 fi
 
-PORT=${PORT:-6379}
+# a free port for the head, so that clusters of several jobs on one machine stay apart (scripts/ray_node.sh also keys
+# the node's temporary directory by it)
+PORT=${PORT:-$("$VERL_ENV/bin/python" -c 'import socket; s = socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')}
+export PORT
 if [ -n "${SLURM_JOB_NODELIST:-}" ]; then
   mapfile -t NODES < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
 else
@@ -29,24 +32,41 @@ else
   [ "${#ROLE_LIST[@]}" -eq "${#NODES[@]}" ] || { echo "ROLES names ${#ROLE_LIST[@]} roles for ${#NODES[@]} machines" >&2; exit 1; }
 fi
 
-# start_node <index> [head address]: the machine's Ray node, in the background
+# start_node <index> [head address]: the machine's Ray node, in the background and in a process group of its own, which
+# the exit stops: this cluster's processes only, not another job's on the same machine
+NODE_PIDS=()
 start_node() {
   if [ -n "${SLURM_JOB_NODELIST:-}" ]; then
-    srun --nodes=1 --ntasks=1 --overlap -w "${NODES[$1]}" bash "$SCRIPTS/ray_node.sh" "${ROLE_LIST[$1]}" "${2:-}" &
+    setsid srun --nodes=1 --ntasks=1 --overlap -w "${NODES[$1]}" bash "$SCRIPTS/ray_node.sh" "${ROLE_LIST[$1]}" "${2:-}" &
   else
-    bash "$SCRIPTS/ray_node.sh" "${ROLE_LIST[$1]}" "${2:-}" &
+    setsid bash "$SCRIPTS/ray_node.sh" "${ROLE_LIST[$1]}" "${2:-}" &
   fi
+  NODE_PIDS+=($!)
+}
+stop_nodes() {
+  local pid
+  for pid in "${NODE_PIDS[@]}"; do kill -- "-$pid" 2> /dev/null || true; done  # a node that already ended
+  wait
+}
+START_DEADLINE=$((SECONDS + 600))
+check_nodes() {  # in the waits below: a node that ended, or a cluster not up in 10 minutes, fails the run
+  local pid
+  for pid in "${NODE_PIDS[@]}"; do
+    kill -0 "$pid" 2> /dev/null || { echo "a Ray node ended while starting; its error is above" >&2; exit 1; }
+  done
+  ((SECONDS < START_DEADLINE)) || { echo "the Ray cluster at $RAY_ADDRESS did not come up in 10 minutes" >&2; exit 1; }
 }
 
-HEAD=$(getent hosts "${NODES[0]}" | awk '{print $1; exit}')
+HEAD=$(getent ahostsv4 "${NODES[0]}" | awk '{print $1; exit}')  # IPv4, which Ray binds: a host may list IPv6 first
 start_node 0
-trap '"$VERL_ENV/bin/ray" stop --force > /dev/null; wait' EXIT
+trap stop_nodes EXIT
 export RAY_ADDRESS=$HEAD:$PORT
-until "$VERL_ENV/bin/ray" status --address="$RAY_ADDRESS" > /dev/null 2>&1; do sleep 5; done
+until "$VERL_ENV/bin/ray" status --address="$RAY_ADDRESS" > /dev/null 2>&1; do check_nodes; sleep 5; done
 for i in "${!NODES[@]}"; do
   [ "$i" -eq 0 ] || start_node "$i" "$RAY_ADDRESS"
 done
 until [ "$("$VERL_ENV/bin/python" -c 'import ray; ray.init(); print(sum(n["Alive"] for n in ray.nodes()))' 2> /dev/null)" = "${#NODES[@]}" ]; do
+  check_nodes
   sleep 5
 done
 
