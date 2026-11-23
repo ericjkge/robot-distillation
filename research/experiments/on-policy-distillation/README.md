@@ -34,7 +34,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | all 8 running; five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
-| SFT 9B / 4B | none | 60483188 and 60483189 were cancelled by Slurm when spatial's preemption failed their afterok; to be submitted once collection is done |
+| SFT 9B / 4B | 60517720, 60517721 | afterok on the four collection jobs (resumable, so a preemption no longer breaks the chain) |
 | OPD | none | not yet, at the human's direction |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
@@ -68,7 +68,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 **Submission headers** (all `gpu_requeue`, `--requeue`)
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once. Spatial, object and libero_10 resubmitted (60512542–44), and goal (60512585), with the same header and code, so all suites land in `runs/collect-bf9b274`.
 - Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
-- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); not yet resubmitted.
+- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok:60512542:60512543:60512544:60512585.
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
 ## Results
