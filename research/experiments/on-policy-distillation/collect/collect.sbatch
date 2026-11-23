@@ -34,8 +34,9 @@ RUN=$OUT/runs/collect-${CODE_SHA:0:7}/$SUITE
 rm -rf "$RUN"  # a requeued job reruns the suite from the start
 start=$SECONDS
 # 20 CPUs: Ray reserves 8 for the replica's placement group (2 per GPU), which leaves 12 for 8 simulators, 3 storage
-# units and the queue's controller
-LIBERO_SERVERS=8 EPISODES=$HERE/$SUITE.json TP=4 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
+# units and the queue's controller. 12 episodes at once: the replica's KV cache holds about 13 long contexts on 4 L40S,
+# and at PEAR's 32 it evicted and recomputed them (libero_goal 60470355: 97% full, 208 preemptions, no prefix hits)
+SESSIONS_PER_REPLICA=12 LIBERO_SERVERS=8 EPISODES=$HERE/$SUITE.json TP=4 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
   setsid bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=3 &
 COLLECT=$!
 until ! kill -0 "$COLLECT" 2>/dev/null || "$WORK_DIR/envs/verl/bin/python" "$HERE/enough.py" "$RUN"; do sleep 60; done

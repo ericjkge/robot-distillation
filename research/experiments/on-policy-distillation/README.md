@@ -24,18 +24,17 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-22 23:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-22 23:40. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes, libero_goal | 60470355 | running since 20:44; stopped automatically once each task has 25 |
-| Teacher episodes, spatial / object / libero_10 | 60478188, 60478189, 60478190 | queued |
-| Base baselines, 9B (goal, spatial, object, libero_10) | 60478193, 60478194, 60478195, 60478196 | queued |
-| Base baselines, 4B (same order) | 60478197, 60478198, 60478199, 60478200 | queued |
+| Teacher episodes (goal, spatial, object, libero_10) | 60479696, 60479697, 60479698, 60479699 | queued; each stops once every task has 25 |
+| Base baselines, 9B (goal, spatial, object, libero_10) | 60479702, 60479703, 60479706, 60479707 | queued |
+| Base baselines, 4B (same order) | 60479708, 60479709, 60479710, 60479711 | queued |
 | Smoke part 3 (distill, export, eval) | 60471092 | queued; earlier attempt ran out of host memory at 96G, now 192G |
-| SFT 9B / 4B | 60478203, 60478204 | waits for collection |
+| SFT 9B / 4B | 60479700, 60479701 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
 **Human decisions**
@@ -45,9 +44,11 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
 
+**Latest fix (23:30):** the first libero_goal run (60470355) stalled. The teacher's GPU memory for episode contexts (KV cache) was 97% full, with 208 evictions and no cache hits, and no episode finished after 22:26. PEAR's 32 episodes at once is sized for H100s; on 4 L40S only about 13 long contexts fit. Now 12 at once for the teacher and 8 per student GPU. I cancelled and resubmitted every affected job; libero_goal restarts from zero (it had 50 episodes).
+
 **Verified on GPU**
 - Collect, SFT (sequence parallelism and CPU offload) and eval work end to end on the smoke test.
-- The 27B teacher runs as one TP4 replica on 4 L40S: 75 GB of host memory; about 50 episodes in the first 100 minutes, slowing as long and failing episodes fill the 32 slots.
+- The 27B teacher runs as one TP4 replica on 4 L40S, using 75 GB of host memory.
 - Distill reaches the student's update; export and eval of the distilled model are not yet confirmed (part 3).
 
 **Findings to keep**
@@ -56,9 +57,9 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 - Ray's CPUs: verl reserves 2 per rollout GPU, and each simulator and storage unit takes 1. A shortfall hangs the run silently; the README on `main` (7b31af8) now says so.
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
-- Collection, code e00b38c (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G.
-- Baselines, code 35a76df (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (memory unmeasured).
-- SFT, code 3b30094 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterany on 60470355, afterok on the other three suites.
+- Collection, code e00b38c (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
+- Baselines, code 35a76df (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (memory unmeasured); 8 episodes at once.
+- SFT, code 3b30094 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
 - Smoke part 3, code 35a76df (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
 ## Results
@@ -67,7 +68,7 @@ None yet.
 
 ## Next step
 
-Record each baseline suite's success rate and time per episode as its job finishes, and resize the baseline memory from the first job's MaxRSS.
+Check the first collection job's KV cache (it should stay below full, with prefix-cache hits), then record each baseline suite's success rate and time per episode as its job finishes, and resize the baseline memory from the first job's MaxRSS.
 
 ## Blocked on
 

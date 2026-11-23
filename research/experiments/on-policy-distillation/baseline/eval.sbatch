@@ -39,8 +39,9 @@ RUN=$OUT/runs/baseline-${CODE_SHA:0:7}/$STUDENT/$SUITE
 rm -rf "$RUN"  # a requeued job reruns the suite from the start
 start=$SECONDS
 # 10 CPUs: Ray reserves 2 for the replica's placement group, which leaves 8 for 4 simulators, 2 storage units and the
-# queue's controller
-LIBERO_SERVERS=4 EPISODES=$EPISODES_DIR/$SUITE.json MODEL_FILE=$MODEL_FILE MODEL=$WORK_DIR/models/$STUDENT RUN=$RUN \
+# queue's controller. 8 episodes at once, not PEAR's 32, so their long contexts stay in one GPU's KV cache (at 32 the
+# teacher's collection evicted and recomputed them)
+SESSIONS_PER_REPLICA=8 LIBERO_SERVERS=4 EPISODES=$EPISODES_DIR/$SUITE.json MODEL_FILE=$MODEL_FILE MODEL=$WORK_DIR/models/$STUDENT RUN=$RUN \
   bash scripts/run.sh scripts/eval.sh +data.apply_chat_template_kwargs.reasoning_effort=xhigh \
   transfer_queue.backend.SimpleStorage.num_data_storage_units=2
 echo "baseline $STUDENT $SUITE: $((SECONDS - start)) s"
