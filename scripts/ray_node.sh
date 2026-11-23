@@ -33,5 +33,6 @@ fi
 mkdir -p "$LOCAL_DIR/ray/$PORT"  # by the cluster's port: another cluster on this machine has its own
 # shellcheck source=/dev/null
 source "$PEAR/scripts/gpu_process_variables.sh" "$VERL_ENV"
+# worker ports from the OS (0) rather than Ray's fixed 10002-19999, which another cluster on this machine also draws from
 RAY_TMPDIR=$LOCAL_DIR/ray/$PORT PYTHONPATH=$PYTHON_PATH exec "$VERL_ENV/bin/ray" start "${NODE_ARGS[@]}" \
-  --num-gpus="$GPUS" --num-cpus="$CPUS" --resources="$RESOURCES" --block
+  --num-gpus="$GPUS" --num-cpus="$CPUS" --resources="$RESOURCES" --min-worker-port=0 --max-worker-port=0 --block
