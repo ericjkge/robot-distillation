@@ -7,7 +7,8 @@
 #SBATCH --gres=gpu:l40s:4
 #SBATCH --time=01:15:00
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=96G
+# host memory: 96G was killed in the first update; the 4B SFT pilot with its state on the CPU peaked at 147 GB
+#SBATCH --mem=192G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/smoke-part3-%j.out
 source /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/smoke/env.sh
 
