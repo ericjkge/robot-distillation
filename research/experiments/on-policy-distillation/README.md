@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 03:05. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 03:25. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -43,7 +43,7 @@ All of these except part 3 run `main` bf9b274; the object half for initial state
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
-- Presentation today (Nov 23) at 17:00: a complete baseline for one student. The 9B was chosen, with each suite split across two jobs so that all four finish around 09:00–11:00. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
+- Presentation today (Nov 23) at 17:00: a complete baseline for one student. The 9B was chosen, with each suite split across two jobs. At the measured rates (0.14–0.37 episodes a minute per job, the student KV caches near full), about 1,300 of the 2,000 episodes will be done by 15:00, covering every task; libero_10 will be partial. The human chose to keep the jobs as they are rather than re-split. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
 
