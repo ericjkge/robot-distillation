@@ -24,18 +24,20 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-22 23:40. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 00:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | 60479696, 60479697, 60479698, 60479699 | queued; each stops once every task has 25 |
-| Base baselines, 9B (goal, spatial, object, libero_10) | 60479702, 60479703, 60479706, 60479707 | queued |
-| Base baselines, 4B (same order) | 60479708, 60479709, 60479710, 60479711 | queued |
+| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | queued; each stops once every task has 25 |
+| Base baselines, 9B (goal, spatial, object, libero_10) | 60483190, 60483191, 60483192, 60483193 | queued |
+| Base baselines, 4B (same order) | 60483194, 60483195, 60483196, 60483197 | queued |
 | Smoke part 3 (distill, export, eval) | 60471092 | queued; earlier attempt ran out of host memory at 96G, now 192G |
-| SFT 9B / 4B | 60479700, 60479701 | waits for all four suites |
+| SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
+
+All of these except part 3 run `main` bf9b274.
 
 **Human decisions**
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -44,7 +46,10 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
 
-**Latest fix (23:30):** the first libero_goal run (60470355) stalled. The teacher's GPU memory for episode contexts (KV cache) was 97% full, with 208 evictions and no cache hits, and no episode finished after 22:26. PEAR's 32 episodes at once is sized for H100s; on 4 L40S only about 13 long contexts fit. Now 12 at once for the teacher and 8 per student GPU. I cancelled and resubmitted every affected job; libero_goal restarts from zero (it had 50 episodes).
+**Latest fixes (Nov 22 23:30 to Nov 23 00:50)**
+- **Teacher stall:** at PEAR's 32 episodes at once, the teacher's KV cache was full (97%, 208 preemptions, no prefix hits). Now 12 at once for the teacher and 8 per student GPU.
+- **Jobs sharing a node killed each other** (baselines 60479702 and 60479703). Every Ray cluster used port 6379 and one temporary directory, and `ray stop --force` stopped all of the user's clusters on the machine. Fixed on `main` (bf9b274): each run gets a free port and its own temporary directory, and stops only its own processes. The head address is now resolved as IPv4 (off Slurm, `getent hosts` returned IPv6 first and the run waited forever), and a cluster that fails to start fails its run within 10 minutes.
+- **Tests on bf9b274:** the CPU suite passes 75 of 75. `repo_tests/two_clusters.sbatch` runs two clusters on one node, under Slurm (60482850) and off it (60482851). It passes both times: separate clusters, the short run's exit leaves the long one's task to complete, no processes are left over, and a node that cannot start fails its run in 44 s. On the old code it fails (60482296).
 
 **Verified on GPU**
 - Collect, SFT (sequence parallelism and CPU offload) and eval work end to end on the smoke test.
@@ -57,9 +62,9 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 - Ray's CPUs: verl reserves 2 per rollout GPU, and each simulator and storage unit takes 1. A shortfall hangs the run silently; the README on `main` (7b31af8) now says so.
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
-- Collection, code e00b38c (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
-- Baselines, code 35a76df (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (memory unmeasured); 8 episodes at once.
-- SFT, code 3b30094 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
+- Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
+- Baselines, code bf9b274 (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (memory unmeasured); 8 episodes at once.
+- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
 - Smoke part 3, code 35a76df (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
 ## Results
