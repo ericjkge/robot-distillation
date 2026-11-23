@@ -24,15 +24,15 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 01:16. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 01:25. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | queued; each stops once every task has 25 |
-| Base baselines, 9B (goal, spatial, object, libero_10) | 60483190, 60483191, 60483192, 60483193 | first three running since 00:36–00:53 |
-| Base baselines, 4B (same order) | 60483194, 60483195, 60483196, 60483197 | queued |
+| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal running since 01:16; each stops once every task has 25 |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60486050 / 60486072, libero_10 60486073 / 60486085 | queued; for the presentation today at 17:00 |
+| Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | 60471092 | queued; earlier attempt ran out of host memory at 96G, now 192G |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
@@ -42,7 +42,8 @@ All of these except part 3 run `main` bf9b274.
 **Human decisions**
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
-- Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
+- Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
+- Presentation today (Nov 23) at 17:00: a complete baseline for one student. The 9B was chosen, with each suite split across two jobs so that all four finish around 09:00–11:00. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
 
@@ -64,7 +65,7 @@ All of these except part 3 run `main` bf9b274.
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
-- Baselines, code bf9b274 (`baseline/eval.sbatch`): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once.
+- Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once.
 - SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
 - Smoke part 3, code 35a76df (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
