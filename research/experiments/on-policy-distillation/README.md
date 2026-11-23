@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 01:25. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 01:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -56,7 +56,7 @@ All of these except part 3 run `main` bf9b274; the object half for initial state
 **Verified on GPU**
 - Base 9B baselines run, two of them sharing one A6000 node. After about 40 minutes: 38 episodes, 0 successes; most end at once because the reply is not a valid action ("parse"), and the rest run out of steps. About 10 episodes per 25 minutes per job, so about 20 hours per suite. Host memory is 31–35 GB of 64G.
 - Collect, SFT (sequence parallelism and CPU offload) and eval work end to end on the smoke test.
-- The 27B teacher runs as one TP4 replica on 4 L40S, using 75 GB of host memory.
+- The 27B teacher runs as one TP4 replica on 4 L40S, using 75 GB of host memory. At 12 episodes at once its KV cache is 27% full, with no preemptions and an 82% prefix-cache hit rate, generating 16k tokens a minute (11k at 32). Its first 29 episodes on goal and spatial all succeeded.
 - Distill reaches the student's update; export and eval of the distilled model are not yet confirmed (part 3).
 
 **Findings to keep**
