@@ -184,6 +184,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - Collection resubmitted with the same header and code e00b38c: libero_goal 60470355, libero_spatial 60470356, libero_object 60470357, libero_10 60470359.
   - SFT resubmitted, afterok on all four, with the same header and code 3b30094: Qwen3.5-9B 60470361 and Qwen3.5-4B 60470362 (`--mem=224G`).
 - **2026-11-22, part 3 (60462309) reached the update and ran out of host memory.** It started early, at 20:34. The validation pass, the rollout and the teacher prefill all ran. In `update_actor` the job was killed at its 96G request (Slurm: OUT_OF_MEMORY, 2 oom_kill events), and both trainer GPUs were also nearly full. The 4B SFT pilot, with its state on the CPU, peaked at 147 GB of host memory, and part 3 adds the rollout and teacher servers. Resubmitted as job 60471092 with the same header but `--mem=192G`, after clearing the failed `distill` run.
+- **2026-11-22, collection runs.** libero_goal (60470355) started at 20:44. The 27B teacher loads with TP4 on the four L40S, the 8 simulators start, and 32 episodes run at once. By 21:50, 45 episodes had ended, all successes, and 47 were saved. The rate was about 2 a minute for the first 15 minutes and 0.4 a minute after that, as the longer episodes, including any failures that run to the step limit, take up the slots. Host memory (MaxRSS) is 75 GB of the 128G request, which is within 1.5x, so the header stays. Part 3 (60471092) is now estimated to start at 23:50.
 
 ## Results
 
