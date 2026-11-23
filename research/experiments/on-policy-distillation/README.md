@@ -24,14 +24,14 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 05:30. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 06:30. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal running since 01:16; each stops once every task has 25 |
-| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60486050 / 60486072, libero_10 60486073 / 60486085 | queued; for the presentation today at 17:00 |
+| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal and spatial running (kept/ended: goal 46/62, spatial 224/246); object and libero_10 pending; each stops once every task has 25 |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60487512 / 60486072, libero_10 60486073 / 60486085 | all 8 running; for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
@@ -72,11 +72,11 @@ All of these except part 3 run `main` bf9b274; the object half for initial state
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 05:30):** 0 successes in 399 episodes, covering 39 of 40 tasks. Wilson 95% upper bounds: spatial 2.3% (163 episodes), goal 3.1% (119), object 5.1% (72), libero_10 7.9% (45). Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 06:30):** 0 successes in 484 episodes, covering 39 of 40 tasks. Wilson 95% upper bounds: spatial 2.0% (190 episodes), goal 2.8% (134), object 3.7% (99), libero_10 5.9% (61). Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
-When libero_goal collection starts (around 03:00), check the teacher's KV cache stays below full with prefix-cache hits. Record each baseline suite's success rate and time per episode as its job finishes.
+Around 15:00, tally the 9B baseline for the presentation (`baseline/tally.py`), flagging libero_10 and object 0–24 as partial.
 
 ## Blocked on
 
