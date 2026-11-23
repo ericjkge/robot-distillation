@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 13:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 14:10. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -74,7 +74,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 13:11):** 1 success in 1,234 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–0.9% (410 episodes), goal 0.1–1.8% (305), object 0–1.3% (299), libero_10 0–1.7% (220). Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 14:07):** 1 success in 1,329 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–0.9% (446 episodes), goal 0.1–1.7% (333), object 0–1.2% (324), libero_10 0–1.7% (226). At 10–20 episodes an hour per half, the sweep ends about 05:30 Nov 24, with libero_10 0–24 last. Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
