@@ -24,20 +24,20 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 08:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 07:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
 | Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal and spatial running (kept/ended: goal 50/70, spatial 254/291; goal runs about 8 episodes an hour against spatial's 45, its teacher replies 2.5 times longer, and its tasks 0 and 3 have no successes yet); object and libero_10 pending; each stops once every task has 25 |
-| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | 6 running, the two 0–24 halves resubmitted after a preemption (see Latest fixes); for the presentation today at 17:00 |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | five halves resubmitted to resume after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
-All of these except part 3 run `main` bf9b274; the two 0–24 halves of object and libero_10 run 47200a9, which adds the worker-port fix.
+The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
 **Human decisions**
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -48,7 +48,7 @@ All of these except part 3 run `main` bf9b274; the two 0–24 halves of object a
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
 
 **Latest fixes (Nov 22 23:30 to Nov 23 08:00)**
-- **Preemption (07:35):** libero_10 0–24 (60486073) was preempted and object 0–24 (60487512) requeued. The job script deleted its run on restart (`rm -rf`), so both would have lost their finished episodes (39 and 47). Both were held and their episodes kept. Now each attempt writes its own `attempt-<job>-<restart>/` and runs only the episodes no attempt has finished (`baseline/remaining.py`); `tally.py` counts an episode once. Resubmitted as 60512116 and 60512117. The six other halves still run the old script, so a background loop holds any of them that is requeued, for the same move.
+- **Preemption (07:35):** libero_10 0–24 (60486073) was preempted and object 0–24 (60487512) requeued. The job script deleted its run on restart (`rm -rf`), so both would have lost their finished episodes (39 and 47). Both were held and their episodes kept. Now each attempt writes its own `attempt-<job>-<restart>/` and runs only the episodes no attempt has finished (`baseline/remaining.py`); `tally.py` counts an episode once. Resubmitted as 60512116 and 60512117. At 07:41 goal 0–24, goal 25–49 and spatial 0–24 (60486046–48) were preempted too and moved the same way (60512338, 60512340, 60512341). The three halves and the collection jobs still on the old script are watched: one that is preempted is cancelled before it restarts, for the same move. Collection has the same `rm -rf`.
 - **Teacher stall:** at PEAR's 32 episodes at once, the teacher's KV cache was full (97%, 208 preemptions, no prefix hits). Now 12 at once for the teacher and 8 per student GPU.
 - **Ray worker ports (main 47200a9):** two clusters starting on one node at once drew the same worker port from Ray's fixed range (the object 0–24 half, 60486050, crashed). Workers now take OS-assigned ports. The CPU suite passes 75 of 75, and the two-cluster test, now with 8 actors per cluster, passes (60486976).
 - **Jobs sharing a node killed each other** (baselines 60479702 and 60479703). Every Ray cluster used port 6379 and one temporary directory, and `ray stop --force` stopped all of the user's clusters on the machine. Fixed on `main` (bf9b274): each run gets a free port and its own temporary directory, and stops only its own processes. The head address is now resolved as IPv4 (off Slurm, `getent hosts` returned IPv6 first and the run waited forever), and a cluster that fails to start fails its run within 10 minutes.
@@ -67,7 +67,7 @@ All of these except part 3 run `main` bf9b274; the two 0–24 halves of object a
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once.
-- Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed 0–24 halves (60512116, 60512117) run code 47200a9 with the same header.
+- Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
 - SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on all four suites.
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
