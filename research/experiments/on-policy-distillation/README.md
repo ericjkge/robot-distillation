@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 09:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 10:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -73,7 +73,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 09:10):** 1 success in 796 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–1.5% (250 episodes), goal 0.1–2.6% (216), object 0–1.9% (199), libero_10 0–2.8% (131). About 160 episodes an hour across the 8 halves, so about 1,700 by 15:00. Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 10:13):** 1 success in 914 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–1.2% (304 episodes), goal 0.1–2.3% (243), object 0–1.7% (222), libero_10 0–2.6% (145). About 120 episodes an hour in the last hour, so about 1,500 by 15:00. Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
