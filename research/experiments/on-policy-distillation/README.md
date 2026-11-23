@@ -37,7 +37,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
-All of these except part 3 run `main` bf9b274.
+All of these except part 3 run `main` bf9b274. `main`'s history was rewritten on Nov 23 with the code unchanged, so bf9b274 is now 94d334c; the old commits stay reachable locally under the tags `archive/*-20261123`.
 
 **Human decisions**
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
