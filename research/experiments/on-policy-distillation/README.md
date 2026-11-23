@@ -33,7 +33,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | all queued. Goal and spatial were preempted at 07:42–07:45 and resume from what they kept: goal 51 (426 episodes left; about 8 an hour, its replies 2.5 times longer than spatial's; tasks 0 and 3 have no successes yet), spatial 277 (tasks 4 and 9 only) |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | all 8 running; five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
-| Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
+| Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B / 4B | none | 60483188 and 60483189 were cancelled by Slurm when spatial's preemption failed their afterok; to be submitted once collection is done |
 | OPD | none | not yet, at the human's direction |
 
@@ -81,7 +81,7 @@ Around 15:00, tally the 9B baseline (`python3 baseline/tally.py runs/baseline-bf
 
 ## Blocked on
 
-- **OPD, the verl mini-batch bug above:** the fix belongs in verl's training loop, inside the pinned PEAR submodule, and runs in Ray workers. The options are a verl patch shipped from this repo, a module injected into the workers through PEAR's external-module hook, or an upstream report to PEAR. Needs the human's choice before OPD; not needed for today's baseline.
+- **OPD, the verl mini-batch bug:** the human chose a verl patch shipped from this repo, plus an upstream report to PEAR (09:20). The earlier diagnosis was incomplete: `train_mini_batch` already repairs the whole batch before selecting, and on CPU that repair holds, even through a consolidated pickle. So something in the GPU path undoes it. The candidate fix repairs the batch before every selection, inside verl's iterator. Smoke part 3 runs it from a patched copy of 47200a9 (`code/47200a9-mbfix`, `VERL_CHANGE_IN_PROGRESS=1`), with a probe that logs `_ragged_idx` before each selection (60517692). Next: ship the patch to `main` and open the PEAR report.
 - **Before OPD (not needed now, at the human's direction):** `max_off_policy_threshold`, 5 (PEAR) or 1 (Algorithm 1; recommended), and the OPD run settings (K, B, lr, validation set).
 
 ## Dead ends
