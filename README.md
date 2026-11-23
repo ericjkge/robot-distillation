@@ -62,6 +62,9 @@ cluster:
 - **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
   and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step.
 
+Each run starts its own Ray cluster (a free port, or `PORT`, and its own temporary directory), so runs can share a
+machine.
+
 Ray needs more than 32 CPUs: PEAR's data queue starts 32 storage units of one CPU each and waits until all of them are
 placed. With fewer CPUs, lower their number with `transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`.
 The other claims on a machine's CPUs: 2 per rollout GPU (verl's placement group for each vLLM replica), one per LIBERO
