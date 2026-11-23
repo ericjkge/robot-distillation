@@ -39,7 +39,7 @@ The 4B student is not run (human, Nov 23).
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
 **Human decisions**
-- No 4B runs: the 4B baseline and SFT are dropped (17:10); 9B only.
+- No 4B runs: the 4B baseline and SFT are dropped (17:10). The goal is one fully finished 9B run: baseline, SFT, OPD and final eval (17:15).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
