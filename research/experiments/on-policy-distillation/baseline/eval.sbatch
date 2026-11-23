@@ -3,7 +3,7 @@
 # protocol at xhigh effort over the suite's 500 episodes (10 tasks x 50 initial states, the episode files collection
 # uses); the four suites together are LIBERO's 2,000. TRIALS (default 0-49) takes a range of the initial states, so a
 # suite can be split across jobs. One replica on one GPU of 45 GB or more.
-#SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a preempted suite reruns whole
+#SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a requeued job resumes
 #SBATCH --requeue
 #SBATCH --gres=gpu:1,vram:45G
 #SBATCH --time=3-00:00:00
@@ -37,10 +37,15 @@ case $STUDENT in
   Qwen3.5-4B) MODEL_FILE=configs/models/qwen3_5_4b.sh ;;
   *) echo "unknown student $STUDENT" >&2; exit 1 ;;
 esac
-RUN=$OUT/runs/baseline-${CODE_SHA:0:7}/$STUDENT/$SUITE/trials-$TRIALS
-rm -rf "$RUN"  # a requeued job reruns its episodes from the start
+# each attempt (a requeue starts another) writes its own directory and runs only the episodes no attempt has finished
+TRIALS_DIR=$OUT/runs/baseline-${CODE_SHA:0:7}/$STUDENT/$SUITE/trials-$TRIALS
+RUN=$TRIALS_DIR/attempt-$SLURM_JOB_ID-${SLURM_RESTART_COUNT:-0}
 mkdir -p "$RUN"
-sed "s/\"trial_id\": \"0-49\"/\"trial_id\": \"$TRIALS\"/" "$EPISODES_DIR/$SUITE.json" > "$RUN/episodes.json"
+python3 "$EPISODES_DIR/../baseline/remaining.py" "$EPISODES_DIR/$SUITE.json" "$TRIALS" "$TRIALS_DIR" > "$RUN/episodes.json"
+if [ ! -s "$RUN/episodes.json" ]; then
+  echo "baseline $STUDENT $SUITE trials $TRIALS: every episode is done"
+  exit 0
+fi
 start=$SECONDS
 # 10 CPUs: Ray reserves 2 for the replica's placement group, which leaves 8 for 4 simulators, 2 storage units and the
 # queue's controller. 8 episodes at once, not PEAR's 32, so their long contexts stay in one GPU's KV cache (at 32 the
