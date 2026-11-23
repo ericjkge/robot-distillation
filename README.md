@@ -64,6 +64,9 @@ cluster:
 
 Ray needs more than 32 CPUs: PEAR's data queue starts 32 storage units of one CPU each and waits until all of them are
 placed. With fewer CPUs, lower their number with `transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`.
+The other claims on a machine's CPUs: 2 per rollout GPU (verl's placement group for each vLLM replica), one per LIBERO
+simulator (`LIBERO_SERVERS`) and one for the queue's controller. On 20 CPUs and four rollout GPUs, for example, 8
+simulators leave room for 3 storage units.
 
 ```bash
 M=$WORK_DIR/models R=$WORK_DIR/runs
