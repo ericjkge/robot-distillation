@@ -2,14 +2,13 @@
 # Teacher-episode collection, one LIBERO suite per job (SUITE): the 27B teacher at xhigh effort over the suite's
 # 500 episodes (10 tasks x 50 initial states), PEAR's protocol, keeping every successful episode's full multi-round
 # context under $RUNS/<suite>/episodes, until each task has the 25 that SFT draws or has ended its 50 trials
-# (enough.py). One TP4 replica on any four GPUs of 48 GB or more: L40S, A6000 or A100 (54 GB of weights in bf16).
-# Or, to start sooner, a TP2 replica on two (TP=2 SESSIONS=4, with --gres=gpu:2,vram:48G), and the suite split across
-# jobs by TASKS (e.g. 0-4 and 5-9).
+# (enough.py). One TP2 replica on any two GPUs of 48 GB or more: L40S, A6000 or A100 (54 GB of weights in bf16); two
+# GPUs start far sooner than four on gpu_requeue. A suite may be split across jobs by TASKS (e.g. 0-4 and 5-9).
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a requeued job resumes
 #SBATCH --requeue
-#SBATCH --gres=gpu:4,vram:48G
+#SBATCH --gres=gpu:2,vram:48G
 #SBATCH --time=2-00:00:00
-#SBATCH --cpus-per-task=20  # gpu_requeue's cap
+#SBATCH --cpus-per-task=16
 # host memory: libero_goal peaked at 75 GB (MaxRSS)
 #SBATCH --mem=128G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/collect-%x-%j.out
@@ -18,8 +17,6 @@ OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
 HERE=/n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/collect
 SUITE=${SUITE:?libero_goal | libero_spatial | libero_object | libero_10}
 TASKS=${TASKS:-0-9}
-TP=${TP:-4}
-SESSIONS=${SESSIONS:-12}
 CODE_SHA=${CODE_SHA:?the commit of the code to run}
 CODE=$OUT/code/$CODE_SHA
 export WORK_DIR=$OUT/work
@@ -47,11 +44,11 @@ if [ ! -s "$RUN/episodes.json" ]; then
   exit 0
 fi
 start=$SECONDS
-# 20 CPUs: Ray reserves 8 for the replica's placement group (2 per GPU), which leaves 12 for 8 simulators, 3 storage
-# units and the queue's controller. 12 episodes at once: the replica's KV cache holds about 13 long contexts on 4 L40S,
-# and at PEAR's 32 it evicted and recomputed them (libero_goal 60470355: 97% full, 208 preemptions, no prefix hits).
-# A TP2 replica on 2 x 48 GB has about a quarter of that KV cache
-SESSIONS_PER_REPLICA=$SESSIONS LIBERO_SERVERS=8 EPISODES=$RUN/episodes.json TP=$TP MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
+# 16 CPUs: Ray reserves 4 for the replica's placement group (2 per GPU), which leaves 12 for 8 simulators, 3 storage
+# units and the queue's controller. 4 episodes at once: a TP4 replica on 4 L40S holds about 13 long contexts (at PEAR's
+# 32 it evicted and recomputed them: libero_goal 60470355, 97% full, 208 preemptions), and TP2 has about a quarter of
+# that KV cache
+SESSIONS_PER_REPLICA=4 LIBERO_SERVERS=8 EPISODES=$RUN/episodes.json TP=2 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
   setsid bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=3 &
 COLLECT=$!
 until ! kill -0 "$COLLECT" 2>/dev/null || "$WORK_DIR/envs/verl/bin/python" "$HERE/enough.py" "$SUITE_DIR" --tasks "$TASKS"; do sleep 60; done
