@@ -1,13 +1,14 @@
 #!/bin/bash
 # Teacher-episode collection, one LIBERO suite per job (SUITE): the 27B teacher at xhigh effort over the suite's
 # 500 episodes (10 tasks x 50 initial states), PEAR's protocol, keeping every successful episode's full multi-round
-# context under $RUNS/<suite>/episodes. One TP4 replica on the machine's four L40S (54 GB of weights in bf16).
+# context under $RUNS/<suite>/episodes, until each task has the 25 that SFT draws or has ended its 50 trials
+# (enough.py). One TP4 replica on any four GPUs of 48 GB or more: L40S, A6000 or A100 (54 GB of weights in bf16).
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a preempted suite reruns whole
 #SBATCH --requeue
-#SBATCH --gres=gpu:l40s:4
+#SBATCH --gres=gpu:4,vram:48G
 #SBATCH --time=2-00:00:00
 #SBATCH --cpus-per-task=20  # gpu_requeue's cap
-# memory unmeasured (SFT peaked at 78 GB): resize to 1.5x the first suite's MaxRSS
+# host memory: libero_goal peaked at 75 GB (MaxRSS)
 #SBATCH --mem=128G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/collect-%x-%j.out
 set -euo pipefail
@@ -35,5 +36,13 @@ start=$SECONDS
 # 20 CPUs: Ray reserves 8 for the replica's placement group (2 per GPU), which leaves 12 for 8 simulators, 3 storage
 # units and the queue's controller
 LIBERO_SERVERS=8 EPISODES=$HERE/$SUITE.json TP=4 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
-  bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=3
+  setsid bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=3 &
+COLLECT=$!
+until ! kill -0 "$COLLECT" 2>/dev/null || "$WORK_DIR/envs/verl/bin/python" "$HERE/enough.py" "$RUN"; do sleep 60; done
+if kill -0 "$COLLECT" 2>/dev/null; then
+  kill -- -"$COLLECT"  # every task has what SFT draws: the run's process group, Ray with it
+  wait "$COLLECT" || true
+else
+  wait "$COLLECT"
+fi
 echo "collect $SUITE: $((SECONDS - start)) s, $(ls "$RUN/episodes" | wc -l) episodes kept"

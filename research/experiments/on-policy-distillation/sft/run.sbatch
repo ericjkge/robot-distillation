@@ -4,7 +4,7 @@
 # settings (lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs), each episode split across the 4 GPUs, the update on the CPU.
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5
 #SBATCH --requeue
-#SBATCH --gres=gpu:l40s:4
+#SBATCH --gres=gpu:4,vram:48G  # L40S, A6000 or A100
 #SBATCH --time=2-00:00:00
 #SBATCH --cpus-per-task=20
 # host memory: the 4B pilot peaked at 147 GB on 2 GPUs; the 9B scales to about 330 GB. Submit the 4B with --mem=224G

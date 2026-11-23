@@ -185,6 +185,21 @@ The 4B student is reported alongside the 9B student but does not decide the dire
   - SFT resubmitted, afterok on all four, with the same header and code 3b30094: Qwen3.5-9B 60470361 and Qwen3.5-4B 60470362 (`--mem=224G`).
 - **2026-11-22, part 3 (60462309) reached the update and ran out of host memory.** It started early, at 20:34. The validation pass, the rollout and the teacher prefill all ran. In `update_actor` the job was killed at its 96G request (Slurm: OUT_OF_MEMORY, 2 oom_kill events), and both trainer GPUs were also nearly full. The 4B SFT pilot, with its state on the CPU, peaked at 147 GB of host memory, and part 3 adds the rollout and teacher servers. Resubmitted as job 60471092 with the same header but `--mem=192G`, after clearing the failed `distill` run.
 - **2026-11-22, collection runs.** libero_goal (60470355) started at 20:44. The 27B teacher loads with TP4 on the four L40S, the 8 simulators start, and 32 episodes run at once. By 21:50, 45 episodes had ended, all successes, and 47 were saved. The rate was about 2 a minute for the first 15 minutes and 0.4 a minute after that, as the longer episodes, including any failures that run to the step limit, take up the slots. Host memory (MaxRSS) is 75 GB of the 128G request, which is within 1.5x, so the header stays. Part 3 (60471092) is now estimated to start at 23:50.
+- **2026-11-22, brief updated (origin/eddy cff8cb4):** a typo fix ("teasks"). The brief already said the teacher's comparison numbers are the paper's (74.4% at xhigh, 21.9% at low effort), so no teacher evaluation is planned.
+- **2026-11-22, human direction in session: finish fast, at no priority cost; run the untuned-base baselines now; no OPD yet.**
+  - Base baselines: full LIBERO (2,000 episodes, all four suites including LIBERO-Long), PEAR's protocol, xhigh effort, LIBERO only.
+  - Collection stops per suite once each task has the 25 episodes SFT draws, or has ended its 50 trials (`collect/enough.py`). The episode records are written after each episode's .pt, so `opd.select_episodes` draws from a stopped run exactly as from a finished one. Tested on synthetic runs (done, not done, a half-written line) and on the live libero_goal run. The stop mechanism (`setsid`, then killing the process group) was tested on a dummy process tree: nothing is left behind, and a failing run still fails the job.
+  - Jobs run on any GPU with enough memory, not only L40S: `--gres=gpu:N,vram:48G` (L40S, A6000, A100-80G), or `vram:45G` for one student GPU (adds the L40). `sbatch --test-only` accepts both. `research/bin/submit` now reads the GPU count from that form; it counted 1 before.
+  - Student baselines take one GPU each, so they fit on partly used nodes.
+  - The gpu_requeue partition was full (every GPU allocated, 76 jobs pending), so more jobs would not have meant more GPUs.
+  - `main` 7b31af8: the README lists the CPUs a machine's roles claim, including the 2 per rollout GPU from verl's `workers/rollout/replica.py` (`max_colocate_count=2`), which caused the collection stall.
+- **Submissions, 2026-11-22 22:4x.** I cancelled the superseded pending collection jobs (60470356, 60470357, 60470359) and SFT jobs (60470361, 60470362), all mine. libero_goal (60470355) keeps running under the earlier script and will be stopped by hand once `enough.py` reports it done.
+  - Collection, code e00b38c (`collect/collect.sbatch`: `gpu_requeue`, `--requeue`, gres gpu:4,vram:48G, 2-00:00:00, 20 CPUs, 128G): libero_spatial 60478188, libero_object 60478189, libero_10 60478190.
+  - SFT, code 3b30094 (`sft/run.sbatch`: `gpu_requeue`, `--requeue`, gres gpu:4,vram:48G, 2-00:00:00, 20 CPUs, 450G, with the 4B at `--mem=224G`): Qwen3.5-9B 60478203, Qwen3.5-4B 60478204. Dependency: afterany on 60470355, afterok on 60478188, 60478189 and 60478190.
+  - Base baselines, code 35a76df (`baseline/eval.sbatch`: `gpu_requeue`, `--requeue`, gres gpu:1,vram:45G, 3-00:00:00, 10 CPUs, 64G; 4 simulators, 2 storage units), each running `scripts/eval.sh` on one suite's 500 episodes at xhigh:
+    - Qwen3.5-9B: goal 60478193, spatial 60478194, object 60478195, libero_10 60478196.
+    - Qwen3.5-4B: goal 60478197, spatial 60478198, object 60478199, libero_10 60478200.
+    - Host memory is unmeasured; resize after the first job's MaxRSS.
 
 ## Results
 
@@ -192,16 +207,10 @@ None yet.
 
 ## Next step
 
-When the PEAR code and teacher checkpoint are available, submit the Step 1 evaluation of base Qwen3.5-9B on LIBERO (2,000 episodes, PEAR protocol), recording time per episode. In the same job, time a teacher episode at xhigh so the latency axis has a measured reference.
+Stop libero_goal (60470355) once `collect/enough.py` reports it done. Record each baseline suite's success rate and time per episode as its job finishes, and resize the baseline memory from the first job's MaxRSS.
 
 ## Blocked on
 
-- **Compute:** `research/bin/submit` allows 1 GPU, 8 GB RAM and 12 h per job. PEAR's recipes assume multi-node Ray clusters, and the 27B teacher alone needs about 54 GB in bf16. No pipeline step fits the current limits.
-- **Code and checkpoints (superseded by the `skeleton` branch for the code):**
-  - The PEAR repo (LIBERO env, prompt format, RL trainer) is not on the cluster. I searched `/n/data1/.../edk005` and `/n/scratch/users/e/edk005`.
-  - The teacher checkpoint is not on the cluster either.
-  - This branch has no `scripts/`, `configs/` or `src/`.
-  - I need the repo URL or location and the checkpoint path. I'm not guessing either one.
-- **Latency on the main plot:** time per episode has to be measured on our hardware for the teacher as well as the students, because the paper doesn't report it. Confirm one teacher inference GPU fits within the submit limits.
+- **Before OPD (not needed now, at the human's direction):** `max_off_policy_threshold`, 5 (PEAR) or 1 (Algorithm 1; recommended), and the OPD run settings (K, B, lr, validation set).
 
 ## Dead ends

@@ -61,7 +61,7 @@ fi
 
 N_GPU=0
 if [[ "$GPUS" == gpu* ]]; then
-  N_GPU=${GPUS##*:}; [[ "$N_GPU" =~ ^[0-9]+$ ]] || N_GPU=1
+  N_GPU=${GPUS%%,*}; N_GPU=${N_GPU##*:}; [[ "$N_GPU" =~ ^[0-9]+$ ]] || N_GPU=1  # gpu[:type]:N[,vram:...]
 fi
 (( N_GPU <= MAX_GPUS )) || refuse "--gres=$GPUS exceeds the ${MAX_GPUS}-GPU limit."
 # no priority penalty: GPU jobs run on the preemptible partition, billed at 0.1 per GPU instead of 5
