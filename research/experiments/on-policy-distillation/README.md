@@ -24,13 +24,13 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 06:30. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 07:30. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal and spatial running (kept/ended: goal 46/62, spatial 224/246); object and libero_10 pending; each stops once every task has 25 |
+| Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal and spatial running (kept/ended: goal 50/70, spatial 254/291; goal runs about 8 episodes an hour against spatial's 45, its teacher replies 2.5 times longer, and its tasks 0 and 3 have no successes yet); object and libero_10 pending; each stops once every task has 25 |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60487512 / 60486072, libero_10 60486073 / 60486085 | all 8 running; for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
@@ -72,7 +72,7 @@ All of these except part 3 run `main` bf9b274; the object half for initial state
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 06:30):** 0 successes in 484 episodes, covering 39 of 40 tasks. Wilson 95% upper bounds: spatial 2.0% (190 episodes), goal 2.8% (134), object 3.7% (99), libero_10 5.9% (61). Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 07:30):** 0 successes in 556 episodes, covering all 40 tasks. Wilson 95% upper bounds: spatial 1.9% (199 episodes), goal 2.5% (148), object 3.0% (124), libero_10 4.3% (85). Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
