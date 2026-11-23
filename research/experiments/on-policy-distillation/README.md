@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 01:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 02:50. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -33,7 +33,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal running since 01:16; each stops once every task has 25 |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60486050 / 60486072, libero_10 60486073 / 60486085 | queued; for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
-| Smoke part 3 (distill, export, eval) | 60471092 | queued; earlier attempt ran out of host memory at 96G, now 192G |
+| Smoke part 3 (distill, export, eval) | 60471092 | running since 02:48, at 192G (the earlier attempt ran out of host memory at 96G) |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
