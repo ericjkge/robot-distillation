@@ -1,0 +1,40 @@
+61 rounds, 14 episodes; aligned 57/61
+thinking tokens/round mean 2526; action tokens 61
+max |base - full_x| action NLL: 0.00528
+
+action NLL low-effort prompt minus xhigh (same reasoning): -0.00192 [-0.00601, +0.00203]
+thinking gap (low - xhigh) mean -0.0134; share of tokens with gap < 0: 0.39
+Spearman(chunk gap, single-deletion action dNLL), per round: mean +0.124 (n=61; negative = chunks the low-effort teacher disfavours are the ones the action needs)
+
+by chunk position in the round (quintiles of chunk index / K):
+  pos  mean gap   mean single-deletion action dNLL   share of chunks in copd@0.3 / rand0@0.3 / oracle@0.3
+  q0  -0.0515   +0.00074                        0.55 / 0.32 / 0.31
+  q1  -0.0061   +0.00234                        0.30 / 0.38 / 0.34
+  q2  -0.0072   -0.00011                        0.27 / 0.32 / 0.42
+  q3  -0.0034   +0.00457                        0.20 / 0.34 / 0.37
+  q4  -0.0050   +0.02003                        0.30 / 0.32 / 0.22
+  last chunk single dNLL mean +0.0532 vs other chunks +0.00026; top-1 necessity chunk is the last one in 46/61 rounds
+
+--- delete ~30% of thinking chars: action dNLL vs undeleted (nats/token), episode bootstrap
+  oracle  -0.00277 [-0.00781, +0.00335]  frac deleted 0.37
+  copd    +0.01876 [+0.00692, +0.03173]  frac deleted 0.37
+  rand0   +0.02956 [+0.01844, +0.04148]  frac deleted 0.36
+  rand1   +0.02717 [+0.01482, +0.04123]  frac deleted 0.37
+  anti    +0.03508 [+0.02237, +0.04968]  frac deleted 0.36
+  tail    +0.07953 [+0.05847, +0.09999]  frac deleted 0.36
+  rand - copd    +0.00960 [+0.00193, +0.01848]
+  anti - copd    +0.01632 [+0.00490, +0.03335]
+  rand - oracle  +0.03113 [+0.02376, +0.03825]
+  copd/rand ratio 0.66; copd share of oracle headroom (rand-copd)/(rand-oracle) 0.31
+
+--- delete ~60% of thinking chars: action dNLL vs undeleted (nats/token), episode bootstrap
+  oracle  -0.00022 [-0.00419, +0.00378]  frac deleted 0.67
+  copd    +0.04207 [+0.02362, +0.06038]  frac deleted 0.66
+  rand0   +0.04492 [+0.03029, +0.05950]  frac deleted 0.67
+  rand1   +0.05760 [+0.03385, +0.08309]  frac deleted 0.67
+  anti    +0.05430 [+0.03856, +0.07362]  frac deleted 0.67
+  tail    +0.09079 [+0.06844, +0.11631]  frac deleted 0.66
+  rand - copd    +0.00920 [+0.00012, +0.01889]
+  anti - copd    +0.01224 [-0.00348, +0.03299]
+  rand - oracle  +0.05148 [+0.03393, +0.06895]
+  copd/rand ratio 0.82; copd share of oracle headroom (rand-copd)/(rand-oracle) 0.18

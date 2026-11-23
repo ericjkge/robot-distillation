@@ -1,0 +1,21 @@
+55 rounds with >=3 parsed xhigh samples
+effort                  tokens x/xhigh            action err (mean)  median  gripper agree parsed  closed
+low         1049 [  536, 1783]    0.68     4.38 [  3.74,  4.99]    2.24           0.97   1.00   1.00
+medium       968 [  638, 1443]    0.63     3.46 [  3.00,  4.02]    2.00           0.99   1.00   1.00
+xhigh       1546 [ 1073, 2223]    1.00     3.02 [  2.38,  3.70]    1.00           0.99   1.00   1.00
+
+paired per round: mean action error(effort) - mean action error(xhigh, leave-one-out)
+  low     +1.36 [+0.40, +2.29]
+  medium  +0.44 [-0.43, +1.16]
+
+token distribution per effort (all samples): median, p90, max, share > 8k
+  low     median    451  p90   1533  max  23535  >8k 0.03  n=220
+  medium  median    587  p90   1823  max  10077  >8k 0.01  n=220
+  xhigh   median    604  p90   3916  max  14116  >8k 0.02  n=220
+per-round median-token ratio vs xhigh (median over rounds):
+  low     0.86  (rounds where effort uses MORE tokens than xhigh: 15/55)
+  medium  0.86  (rounds where effort uses MORE tokens than xhigh: 16/55)
+xhigh   share of tokens in the longest 10% / 20% of samples: 0.40 / 0.62
+medium  share of tokens in the longest 10% / 20% of samples: 0.43 / 0.58
+low     share of tokens in the longest 10% / 20% of samples: 0.57 / 0.68
+X1 recorded rounds: longest 20% hold 0.55 of thinking tokens
