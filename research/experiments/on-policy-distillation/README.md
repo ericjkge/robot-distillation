@@ -24,26 +24,26 @@ The 4B student is not run (human, Nov 23).
 
 ## Current state
 
-*Updated 2026-11-23 17:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 17:20. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | spatial running since 14:48: task 4 reached 30 kept; task 9 has 17 of 47 ended, so it will end its 50 trials short of 25. Goal (51 kept, 426 episodes left), object and libero_10 queued |
+| Teacher episodes | spatial 60512542 (TP4, last task); goal, object, libero_10 each split in two by task (0–4 / 5–9) on 2 GPUs: 60554675 / 60554677, 60554678 / 60554679, 60554680 / 60554681 | spatial: task 9 has 17 of 47 ended, so it ends short of 25; the six TP2 jobs queued (17:15) |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial done (500 episodes, 0 successes); 6 running; at 16:58 2/1,604 (goal 2/417, object 0/410, libero_10 0/277); five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
-| Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
-| SFT 9B | 60517720 | afterok on the four collection jobs (resumable, so a preemption no longer breaks the chain) |
-| OPD | none | not yet, at the human's direction |
+| Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only) | candidate verl fix with a probe (see Blocked on) |
+| SFT 9B | 60554683 | afterok on the seven collection jobs (60517720 was cancelled with the old collection jobs) |
+| OPD 9B, from the SFT checkpoint | none | after SFT and the verl fix |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
 **Human decisions**
-- No 4B runs: the 4B baseline and SFT are dropped (17:10). The goal is one fully finished 9B run: baseline, SFT, OPD and final eval (17:15).
+- No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
-- Collection stays on 4 GPUs (TP4), though Slurm estimates its start for Nov 25; the human declined moving the teacher to 2 GPUs (13:20).
+- As fast as possible (17:15): one finished 9B run, SFT then OPD; no OPD from the untuned student. So collection moved to 2 GPUs (TP2, 4 episodes at once), which start far sooner than 4, each suite split in two by task; the 4-GPU jobs (60512543, 60512544, 60512585; Slurm estimated Nov 26–27) were cancelled. OPD will use `max_off_policy_threshold=1` (Algorithm 1).
 - Presentation today (Nov 23) at 17:00: a complete baseline for one student. The 9B was chosen, with each suite split across two jobs. At the measured rates (0.14–0.37 episodes a minute per job, the student KV caches near full), about 1,300 of the 2,000 episodes will be done by 15:00, covering every task; libero_10 will be partial. The human chose to keep the jobs as they are rather than re-split. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
@@ -68,8 +68,9 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 **Submission headers** (all `gpu_requeue`, `--requeue`)
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once. Spatial, object and libero_10 resubmitted (60512542–44), and goal (60512585), with the same header and code, so all suites land in `runs/collect-bf9b274`.
+- Collection TP2, code bf9b274 (`collect/collect.sbatch` at eb1a500 and after, `TASKS` selects the tasks): gpu:2,vram:48G, 2 days, 16 CPUs, 128G; 4 episodes at once. Same `runs/collect-bf9b274`.
 - Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
-- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok:60512542:60512543:60512544:60512585.
+- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on collection (now 60554683: 60512542 and 60554675–81).
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 
 ## Results
@@ -92,6 +93,6 @@ After the presentation, tally the finished 9B baseline (`python3 baseline/tally.
 ## Blocked on
 
 - **OPD, the verl mini-batch bug:** the human chose a verl patch shipped from this repo, plus an upstream report to PEAR (09:20). The earlier diagnosis was incomplete: `train_mini_batch` already repairs the whole batch before selecting, and on CPU that repair holds, even through a consolidated pickle. So something in the GPU path undoes it. The candidate fix repairs the batch before every selection, inside verl's iterator. Smoke part 3 runs it from a patched copy of 47200a9 (`code/47200a9-mbfix`, `VERL_CHANGE_IN_PROGRESS=1`), with a probe that logs `_ragged_idx` before each selection (60517692). Next: ship the patch to `main` and open the PEAR report.
-- **Before OPD (not needed now, at the human's direction):** `max_off_policy_threshold`, 5 (PEAR) or 1 (Algorithm 1; recommended), and the OPD run settings (K, B, lr, validation set).
+- **Before OPD:** the run settings (K, B, lr, validation set); `max_off_policy_threshold=1`.
 
 ## Dead ends
