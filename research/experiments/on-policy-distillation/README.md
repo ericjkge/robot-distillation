@@ -24,7 +24,7 @@ The 4B student is not run (human, Nov 23).
 
 ## Current state
 
-*Updated 2026-11-23 17:20. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 18:10. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -33,8 +33,8 @@ The 4B student is not run (human, Nov 23).
 | Teacher episodes | spatial 60512542 (TP4, last task); goal, object, libero_10 each split in two by task (0–4 / 5–9) on 2 GPUs: 60554675 / 60554677, 60554678 / 60554679, 60554680 / 60554681 | spatial: task 9 has 17 of 47 ended, so it ends short of 25; the six TP2 jobs queued (17:15) |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial done (500 episodes, 0 successes); 6 running; at 16:58 2/1,604 (goal 2/417, object 0/410, libero_10 0/277); five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only) | candidate verl fix with a probe (see Blocked on) |
-| SFT 9B | 60554683 | afterok on the seven collection jobs (60517720 was cancelled with the old collection jobs) |
-| OPD 9B, from the SFT checkpoint | none | after SFT and the verl fix |
+| SFT 9B | 60556633 | afterok on the six TP2 collection jobs (spatial done); checkpoints every 10 steps so a requeue resumes (60554683 cancelled for that) |
+| OPD 9B, from the SFT checkpoint | 60556634 | afterok on SFT; runs until stopped by hand (STEPS=1000 is only a bound) |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
@@ -44,7 +44,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
 - As fast as possible (17:15): one finished 9B run, SFT then OPD; no OPD from the untuned student. So collection moved to 2 GPUs (TP2, 4 episodes at once), which start far sooner than 4, each suite split in two by task; the 4-GPU jobs (60512543, 60512544, 60512585; Slurm estimated Nov 26–27) were cancelled. OPD will use `max_off_policy_threshold=1` (Algorithm 1).
-- Deadline (17:55): OPD finished before Nov 29; the final eval is not needed by then. SFT waits for every suite's collection.
+- Deadline (17:55): OPD finished before Nov 29; the final eval is not needed by then. SFT waits for every suite's collection. No partitions that cost priority yet (18:05). OPD runs open-ended; the human decides when to stop it.
 - Presentation today (Nov 23) at 17:00: a complete baseline for one student. The 9B was chosen, with each suite split across two jobs. At the measured rates (0.14–0.37 episodes a minute per job, the student KV caches near full), about 1,300 of the 2,000 episodes will be done by 15:00, covering every task; libero_10 will be partial. The human chose to keep the jobs as they are rather than re-split. The teacher's numbers are the paper's (74.4% xhigh, 21.9% low; brief cff8cb4).
 - Collection stops per suite once each task has 25 successes or has ended its 50 trials (`collect/enough.py`).
 - Compute: any limit, as long as it costs no priority. GPU jobs go on `gpu_requeue` only, and may use any GPU with enough memory (`vram:48G`, or `vram:45G` for one student GPU).
@@ -71,8 +71,9 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once. Spatial, object and libero_10 resubmitted (60512542–44), and goal (60512585), with the same header and code, so all suites land in `runs/collect-bf9b274`.
 - Collection TP2, code bf9b274 (`collect/collect.sbatch` at eb1a500 and after, `TASKS` selects the tasks): gpu:2,vram:48G, 2 days, 16 CPUs, 128G; 4 episodes at once. Same `runs/collect-bf9b274`.
 - Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
-- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on collection (now 60554683: 60512542 and 60554675–81).
+- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on collection (now 60556633: 60554675–81), `trainer.save_freq=10`.
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
+- OPD, code `code/47200a9-mbfix` (`opd/run.sbatch`): gpu:8,vram:48G (A6000), 5 days, 20 CPUs, 500G; 4 trainer, 2 rollout (8 episodes each), 2 teacher (TP2) GPUs; batch 64, `max_off_policy_threshold=1`, validation every 10 updates on PEAR's LIBERO-Goal validation episodes; checkpoints every update; afterok:60556633.
 
 ## Results
 
@@ -94,6 +95,6 @@ After the presentation, tally the finished 9B baseline (`python3 baseline/tally.
 ## Blocked on
 
 - **OPD, the verl mini-batch bug:** the human chose a verl patch shipped from this repo, plus an upstream report to PEAR (09:20). The earlier diagnosis was incomplete: `train_mini_batch` already repairs the whole batch before selecting, and on CPU that repair holds, even through a consolidated pickle. So something in the GPU path undoes it. The candidate fix repairs the batch before every selection, inside verl's iterator. Smoke part 3 runs it from a patched copy of 47200a9 (`code/47200a9-mbfix`, `VERL_CHANGE_IN_PROGRESS=1`), with a probe that logs `_ragged_idx` before each selection (60517692). Next: ship the patch to `main` and open the PEAR report.
-- **Before OPD:** the run settings (K, B, lr, validation set); `max_off_policy_threshold=1`.
+- **OPD's start:** the verl fix is unconfirmed on GPU (smoke 60517692). If OPD hits the bug, it fails at its second update and is resubmitted with the fix that smoke settles.
 
 ## Dead ends
