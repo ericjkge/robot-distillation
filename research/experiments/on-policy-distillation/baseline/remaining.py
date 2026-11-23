@@ -1,13 +1,21 @@
-"""The episode file of a baseline job's episodes that no earlier attempt of the job finished, so that a requeued job
-resumes rather than reruns: one product per task, of the trials in TRIALS not yet in a record under the run.
-    python remaining.py <suite episode file> <trials, e.g. 0-24> <run> > episodes.json
+"""The episode file of a job's episodes that no earlier attempt of the job finished, so that a requeued job resumes
+rather than reruns: one product per task, of the trials in TRIALS not yet in a record under the job's directory (in
+its attempts' val_dumps/). With --keep, a task that already has that many episodes kept (a collection's
+episodes/<uid>.pt) is left out.
+    python remaining.py <suite episode file> <trials, e.g. 0-24> <job dir> [--keep 25] > episodes.json
 Prints nothing when every episode is done."""
 
+import argparse
 import json
-import sys
+from collections import Counter
 from pathlib import Path
 
-suite_file, trials, run = sys.argv[1], sys.argv[2], Path(sys.argv[3])
+parser = argparse.ArgumentParser()
+parser.add_argument("suite_file", type=Path)
+parser.add_argument("trials")
+parser.add_argument("job_dir", type=Path)
+parser.add_argument("--keep", type=int)
+args = parser.parse_args()
 
 
 def numbers(ranges: str) -> list[int]:
@@ -19,10 +27,10 @@ def numbers(ranges: str) -> list[int]:
     return out
 
 
-episode_file = json.loads(Path(suite_file).read_text())
+episode_file = json.loads(args.suite_file.read_text())
 env = episode_file["env"]
-done = set()
-for dump in run.glob("*/val_dumps/*.jsonl"):
+done, kept = set(), Counter()
+for dump in args.job_dir.glob("**/val_dumps/*.jsonl"):
     for line in dump.read_text().splitlines():
         try:
             record = json.loads(line)
@@ -30,10 +38,13 @@ for dump in run.glob("*/val_dumps/*.jsonl"):
             continue
         episode = record["extra_fields"]["episode"]["env"]
         done.add((int(episode["task_id"]), int(episode["trial_id"])))
+        kept[int(episode["task_id"])] += (dump.parent.parent / "episodes" / f"{record['uid']}.pt").exists()
 
 products = []
 for task in numbers(env["task_id"]):
-    left = [trial for trial in numbers(trials) if (task, trial) not in done]
+    if args.keep is not None and kept[task] >= args.keep:
+        continue
+    left = [trial for trial in numbers(args.trials) if (task, trial) not in done]
     if left:
         products.append({"suite": env["suite"], "task_id": [task], "trial_id": left})
 if products:

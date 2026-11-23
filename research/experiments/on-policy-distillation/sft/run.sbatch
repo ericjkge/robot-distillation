@@ -27,8 +27,10 @@ if [ ! -d "$CODE" ]; then
 fi
 SET=$COLLECT/sft-set
 if [ ! -d "$SET" ]; then
+  # every run of the four suites: one per attempt of a requeued collection job
+  mapfile -t RUNS < <(find "$COLLECT"/libero_{goal,spatial,object,10} -type d -name val_dumps -printf '%h\n' | sort)
   PYTHONPATH=$CODE/src "$WORK_DIR/envs/verl/bin/python" -m opd.select_episodes --per-task 25 --seed 0 --out "$SET" \
-    "$COLLECT"/libero_{goal,spatial,object,10}
+    "${RUNS[@]}"
 fi
 flock -u 9
 cd "$CODE"
