@@ -1,0 +1,110 @@
+# On-Policy Distillation for Robot-Use Agents
+
+## Motivation
+
+[PEAR](https://arxiv.org/abs/2611.18562) trains a 27B reasoning model to control robots, with reinforcement learning
+in simulation alone. The model reasons in a chain of thought before every action. At its highest reasoning effort it
+solves 74.4% of LIBERO, but each round of thought adds latency on a real robot. Lowering the effort shortens the thought
+but costs most of the success: 21.9% at low effort.
+
+This project asks whether a smaller student, trained to imitate the teacher on the states the student itself reaches,
+can keep the teacher's success at a fraction of its time per episode. Training on the student's own states (on-policy
+distillation) avoids the compounding errors of imitating teacher trajectories alone.
+
+- **Teacher:** [Qwen3.8-27B-PEAR-LIBERO_only](https://huggingface.co/mit-han-lab/Qwen3.8-27B-PEAR-LIBERO_only)
+- **Students:** [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) and [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B). They share the teacher's tokenizer and use
+  its chat template, which sets the reasoning effort in the system prompt, so a student's prompts match the teacher's
+  token for token.
+- **Benchmarks:** LIBERO (2,000 episodes: 4 suites × 10 tasks × 50 initial states), LIBERO-Pro and LIBERO-Plus
+
+## Pipeline
+
+| Step | | Script |
+| --- | --- | --- |
+| 1. Teacher data | Run the teacher on LIBERO's four suites. Keep each successful episode's full multi-round context: images, reasoning and actions. | `scripts/collect.sh` |
+| 2. SFT | Fine-tune each student on the teacher's episodes, up to 25 per task (`src/opd/select_episodes.py`), with the loss on every generated token, in the same context format as at inference. | `scripts/sft.sh` |
+| 3. On-policy distillation | Starting from the SFT checkpoint, at each step the student runs LIBERO episodes, the teacher scores every student token, and the student takes one policy-gradient step on the per-token reverse KL. There is no task reward. | `scripts/distill.sh` |
+| 4. Evaluation | Measure the success rate of any model on LIBERO, LIBERO-Pro or LIBERO-Plus. | `scripts/eval.sh` |
+
+The project is built on [PEAR](https://github.com/mit-han-lab/pear), which provides the LIBERO environments, the
+prompt format, the rollout and the trainer. Distillation uses the on-policy distillation of the
+[verl](https://github.com/volcengine/verl) version that PEAR pins.
+
+## Layout
+
+```
+configs/
+  models/       one file per model: its Hub repository and pinned revision
+  hardware/     GPU profiles beyond PEAR's own H100 and GB300 recipes
+  step/         each step's settings, an overlay on the PEAR or verl config it runs on
+scripts/        setup, one script per step, and the Ray launcher (run.sh, ray_node.sh)
+src/opd/        entry points, teacher-episode collection and the SFT dataset
+third_party/    PEAR, pinned as a submodule
+```
+
+## Setup
+
+```bash
+git clone --recursive https://github.com/ericjkge/robot-distillation.git && cd robot-distillation
+export WORK_DIR=/shared/path       # a directory every machine sees: environments, models and runs
+bash scripts/setup.sh              # PEAR's environments (verl, LIBERO, LIBERO-Pro, LIBERO-Plus) and the three models
+```
+
+## Running
+
+Every step reads its settings from environment variables, and passes any extra arguments to Hydra as config
+overrides. The steps that use Ray (`collect`, `distill`, `eval`) start through `scripts/run.sh`, which works with any
+cluster:
+
+- **One machine:** `bash scripts/run.sh <step>` starts Ray locally and gives the machine every role.
+- **Slurm:** `sbatch [resources] scripts/run.sh <step>` starts Ray over the job's machines. `ROLES` names each machine's
+  role, one per machine in node order: `trainer`, `rollout` or `teacher`.
+- **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
+  and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step.
+
+Ray needs more than 32 CPUs: PEAR's data queue starts 32 storage units of one CPU each and waits until all of them are
+placed. With fewer CPUs, lower their number with `transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`.
+The other claims on a machine's CPUs: 2 per rollout GPU (verl's placement group for each vLLM replica), one per LIBERO
+simulator (`LIBERO_SERVERS`) and one for the queue's controller. On 20 CPUs and four rollout GPUs, for example, 8
+simulators leave room for 3 storage units.
+
+```bash
+M=$WORK_DIR/models R=$WORK_DIR/runs
+
+# 1. teacher episodes, at xhigh effort
+MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts/collect.sh
+
+# 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer)
+python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher
+MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/sft-set RUN=$R/sft-9b bash scripts/sft.sh
+
+# 3. on-policy distillation: here three machines, one per role
+sbatch --nodes=3 --export=ALL,ROLES="trainer rollout teacher",MODEL_FILE=configs/models/qwen3_5_9b.sh,\
+MODEL=<SFT checkpoint>,TEACHER=$M/Qwen3.8-27B-PEAR-LIBERO_only,RUN=$R/opd-9b scripts/run.sh scripts/distill.sh
+
+# 4. evaluation: BENCH=libero (default), libero_pro or libero_plus
+MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> RUN=$R/eval-9b bash scripts/run.sh scripts/eval.sh
+```
+
+To evaluate the teacher at another reasoning effort, add the override
+`+data.apply_chat_template_kwargs.reasoning_effort=low`. Evaluation writes per-episode records to
+`$RUN/val_dumps/eval_<step>.jsonl` and the success rates to `eval_<step>_summary.json`.
+
+**Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes for those GPUs. The default, `GPU=generic`,
+runs on any CUDA GPU (`configs/hardware/generic.sh`) without PEAR's custom kernels. To add a profile, add a file to
+`configs/hardware/`.
+
+## Tests
+
+The tests run on CPU: they check the command each step builds, compose every step's config against PEAR's and verl's,
+and cover the SFT data and the chat template.
+
+```bash
+pip install -r requirements.txt
+pytest                # -m "not network" skips the tests that fetch pinned files from the Hugging Face Hub
+```
+
+## Acknowledgments
+
+Built on [PEAR](https://github.com/mit-han-lab/pear), [verl](https://github.com/volcengine/verl),
+[vLLM](https://github.com/vllm-project/vllm) and [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO).
