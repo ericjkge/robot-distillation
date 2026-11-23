@@ -24,13 +24,13 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 12:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 13:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | all queued. Goal and spatial were preempted at 07:42–07:45 and resume from what they kept: goal 51 (426 episodes left; about 8 an hour, its replies 2.5 times longer than spatial's; tasks 0 and 3 have no successes yet), spatial 277 (tasks 4 and 9 only) |
+| Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | all queued. Goal and spatial were preempted at 07:42–07:45 and resume from what they kept: goal 51 (426 episodes left; about 8 an hour, its replies 2.5 times longer than spatial's; tasks 0 and 3 have no successes yet), spatial 277 (tasks 4 and 9 only); Slurm's estimated start for all four is Nov 25 (4-GPU nodes are scarce on gpu_requeue) |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | all 8 running; five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
@@ -73,7 +73,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 12:12):** 1 success in 1,131 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–1.0% (379 episodes), goal 0.1–2.0% (275), object 0–1.4% (280), libero_10 0–1.9% (197). About 110 episodes an hour, so about 1,450 by 15:00. Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 13:11):** 1 success in 1,234 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–0.9% (410 episodes), goal 0.1–1.8% (305), object 0–1.3% (299), libero_10 0–1.7% (220). Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
