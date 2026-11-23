@@ -1,6 +1,6 @@
 #!/bin/bash
 # Two Ray runs of scripts/run.sh on one machine at once, as two Slurm jobs sharing a node do. Checks:
-#   - each run starts its own cluster;
+#   - each run starts its own cluster, whose workers take their ports from the OS (8 actors each);
 #   - the short run's exit leaves the long run's cluster alive: the long run's task, started before and finished
 #     after that exit, completes;
 #   - no Ray process is left once both runs end;
@@ -35,11 +35,14 @@ source "$(dirname "$0")/common.sh"
 import os, time, ray
 ray.init()
 print("cluster", os.environ["RAY_ADDRESS"], flush=True)
-@ray.remote
-def task(seconds):
-    time.sleep(seconds)
-    return "done"
-print("task", ray.get(task.remote(int(os.environ["PROBE_SECONDS"]))), flush=True)
+@ray.remote(num_cpus=0)
+class Actor:
+    def wait(self, seconds):
+        time.sleep(seconds)
+        return "done"
+actors = [Actor.remote() for _ in range(8)]
+results = ray.get([a.wait.remote(int(os.environ["PROBE_SECONDS"])) for a in actors])
+print("task", "done" if results == ["done"] * 8 else results, flush=True)
 PY
 EOF
 
@@ -49,6 +52,8 @@ LONG=$!
 sleep 45  # the long run's cluster is up and its task running
 PROBE_SECONDS=1 bash scripts/run.sh scripts/probe.sh > short.log 2>&1
 ALIVE=$(kill -0 $LONG 2> /dev/null && echo yes || echo no)
+PORTS=$(pgrep -u "$USER" -af "raylet.*$LOCAL_DIR" | grep -c -- "--min_worker_port=0 --max_worker_port=0" || true)
+echo "raylets with OS-chosen worker ports: $PORTS"
 echo "short run ended at $SECONDS s; long run still going: $ALIVE"
 wait $LONG
 grep -h "^cluster\|^task" long.log short.log
@@ -57,6 +62,7 @@ LEFT=$(pgrep -u "$USER" -f "$LOCAL_DIR" || true)
 
 [ "$(grep -c '^task done' long.log short.log | awk -F: '{s += $2} END {print s}')" = 2 ] || { echo "FAIL: a task did not complete"; cat long.log short.log; exit 1; }
 [ "$(grep -h '^cluster' long.log short.log | sort -u | wc -l)" = 2 ] || { echo "FAIL: the runs shared a cluster"; exit 1; }
+[ "$PORTS" -ge 1 ] || { echo "FAIL: the long run's raylet does not take worker ports from the OS"; exit 1; }
 [ "$ALIVE" = yes ] || { echo "FAIL: the long run ended before the short one"; exit 1; }
 [ -z "$LEFT" ] || { echo "FAIL: Ray processes left: $LEFT"; ps -o pid,cmd -p $LEFT; exit 1; }
 
