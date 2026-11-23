@@ -24,7 +24,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 03:25. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 04:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
@@ -33,7 +33,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | Teacher episodes (goal, spatial, object, libero_10) | 60483184, 60483185, 60483186, 60483187 | goal running since 01:16; each stops once every task has 25 |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49) | goal 60486046 / 60486047, spatial 60486048 / 60486049, object 60486050 / 60486072, libero_10 60486073 / 60486085 | queued; for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
-| Smoke part 3 (distill, export, eval) | 60494741 | queued, on `main` 47200a9 with the actor's state on the CPU (60492541 stopped at a config check: PEAR's `optimizer_offload_step` needs its manual offload, so both go off) |
+| Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
@@ -57,7 +57,7 @@ All of these except part 3 run `main` bf9b274; the object half for initial state
 - Base 9B baselines run, two of them sharing one A6000 node. After about 40 minutes: 38 episodes, 0 successes; most end at once because the reply is not a valid action ("parse"), and the rest run out of steps. About 10 episodes per 25 minutes per job, so about 20 hours per suite. Host memory is 31–35 GB of 64G.
 - Collect, SFT (sequence parallelism and CPU offload) and eval work end to end on the smoke test.
 - The 27B teacher runs as one TP4 replica on 4 L40S, using 75 GB of host memory. At 12 episodes at once its KV cache is 27% full, with no preemptions and an 82% prefix-cache hit rate, generating 16k tokens a minute (11k at 32). Its first 29 episodes on goal and spatial all succeeded.
-- Distill runs validation, rollout, teacher prefill and the student's backward pass. Part 3 (60471092, 192G) then ran out of GPU memory in Adam's step on 2 trainer L40S: PEAR's `optimizer_offload` brings the 4B's fp32 state onto the GPUs, as in the SFT pilot. Resubmitted with `actor_rollout_ref.actor.fsdp_config.offload_policy=true` (FSDP2 CPU offload, as SFT uses). Export and eval of the distilled model are not yet confirmed.
+- Distill runs validation, rollout, teacher prefill and the student's backward pass. Part 3 (60471092, 192G) then ran out of GPU memory in Adam's step on 2 trainer L40S: PEAR's `optimizer_offload` brings the 4B's fp32 state onto the GPUs, as in the SFT pilot. Resubmitted with `actor_rollout_ref.actor.fsdp_config.offload_policy=true` (FSDP2 CPU offload, as SFT uses). With the state on the CPU (60494741), the first update completed. Fetching the next mini-batch failed (`split_with_sizes ... 5129 ... [4, 4]`): pickling through the transfer queue resets the nested 3D `position_ids`' ragged dimension from 2 to 1. verl's `train_mini_batch` repairs it only on each selected mini-batch (`maybe_fix_3d_position_ids`), not on the batch it selects from. Reproduced on CPU, and the repair applied to the whole batch first fixes it with the values intact. Export and eval of the distilled model are not yet confirmed.
 
 **Findings to keep**
 - Tokenizers: the teacher and students share vocabulary and merges. The differences (7 audio tokens, a combining-mark rule) never occur in LIBERO text, so they are compatible (jobs 60171018 and 60171577).
@@ -80,6 +80,7 @@ When libero_goal collection starts (around 03:00), check the teacher's KV cache 
 
 ## Blocked on
 
+- **OPD, the verl mini-batch bug above:** the fix belongs in verl's training loop, inside the pinned PEAR submodule, and runs in Ray workers. The options are a verl patch shipped from this repo, a module injected into the workers through PEAR's external-module hook, or an upstream report to PEAR. Needs the human's choice before OPD; not needed for today's baseline.
 - **Before OPD (not needed now, at the human's direction):** `max_off_policy_threshold`, 5 (PEAR) or 1 (Algorithm 1; recommended), and the OPD run settings (K, B, lr, validation set).
 
 ## Dead ends
