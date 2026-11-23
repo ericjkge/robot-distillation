@@ -24,13 +24,13 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 14:10. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 15:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | all queued. Goal and spatial were preempted at 07:42–07:45 and resume from what they kept: goal 51 (426 episodes left; about 8 an hour, its replies 2.5 times longer than spatial's; tasks 0 and 3 have no successes yet), spatial 277 (tasks 4 and 9 only); Slurm's estimated start for all four is Nov 25 (4-GPU nodes are scarce on gpu_requeue) |
+| Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | spatial running since 14:48 (tasks 4 and 9 only; 277 kept before); goal (51 kept, 426 episodes left), object and libero_10 queued |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | all 8 running; five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
@@ -74,11 +74,20 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 14:07):** 1 success in 1,329 episodes (goal), covering all 40 tasks; LIBERO mean 0.1%. Wilson 95% intervals: spatial 0–0.9% (446 episodes), goal 0.1–1.7% (333), object 0–1.2% (324), libero_10 0–1.7% (226). At 10–20 episodes an hour per half, the sweep ends about 05:30 Nov 24, with libero_10 0–24 last. Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (for the presentation, 14:58; partial):** 1 success in 1,417 of 2,000 episodes, covering all 40 tasks; LIBERO mean 0.1%. Compare the teacher's 74.4% (paper, xhigh).
+
+| Suite | Episodes | Successes | Rate | Wilson 95% |
+| --- | --- | --- | --- | --- |
+| spatial | 481 | 0 | 0.0% | 0–0.8% |
+| goal | 349 | 1 | 0.3% | 0.1–1.6% |
+| object | 351 | 0 | 0.0% | 0–1.1% |
+| libero_10 | 236 | 0 | 0.0% | 0–1.6% |
+
+How the 1,417 episodes end: 60% at the first turn with no executable action, 23% out of steps, 17% before the step limit later in the episode, 0.1% success (median 2 turns). The sweep ends about 05:30 Nov 24, with libero_10 0–24 last.
 
 ## Next step
 
-Around 15:00, tally the 9B baseline (`python3 baseline/tally.py runs/baseline-bf9b274/Qwen3.5-9B runs/baseline-47200a9/Qwen3.5-9B`) for the presentation (`baseline/tally.py`), flagging libero_10 and object 0–24 as partial.
+After the presentation, tally the finished 9B baseline (`python3 baseline/tally.py runs/baseline-bf9b274/Qwen3.5-9B runs/baseline-47200a9/Qwen3.5-9B`) for the presentation (`baseline/tally.py`), flagging libero_10 and object 0–24 as partial.
 
 ## Blocked on
 
