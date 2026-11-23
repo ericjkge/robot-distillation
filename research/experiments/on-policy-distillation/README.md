@@ -24,14 +24,14 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 
 ## Current state
 
-*Updated 2026-11-23 08:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 08:15. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
 | Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | all queued. Goal and spatial were preempted at 07:42–07:45 and resume from what they kept: goal 51 (426 episodes left; about 8 an hour, its replies 2.5 times longer than spatial's; tasks 0 and 3 have no successes yet), spatial 277 (tasks 4 and 9 only) |
-| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | five halves resubmitted to resume after preemptions (see Latest fixes); for the presentation today at 17:00 |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | all 8 running; five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
 | Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | none | paused after 60494741: blocked on a verl bug (see Blocked on) |
 | SFT 9B / 4B | none | 60483188 and 60483189 were cancelled by Slurm when spatial's preemption failed their afterok; to be submitted once collection is done |
@@ -73,7 +73,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 ## Results
 
-- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 07:30):** 0 successes in 556 episodes, covering all 40 tasks. Wilson 95% upper bounds: spatial 1.9% (199 episodes), goal 2.5% (148), object 3.0% (124), libero_10 4.3% (85). Compare the teacher's 74.4% (paper, xhigh).
+- **Base Qwen3.5-9B, LIBERO, xhigh, PEAR's protocol (in progress, 08:15):** 0 successes in 647 episodes, covering all 40 tasks. Wilson 95% upper bounds: spatial 1.8% (209 episodes), goal 2.2% (170), object 2.3% (162), libero_10 3.5% (106). Compare the teacher's 74.4% (paper, xhigh).
 
 ## Next step
 
