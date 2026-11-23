@@ -37,7 +37,7 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | SFT 9B / 4B | 60483188, 60483189 | waits for all four suites |
 | OPD | none | not yet, at the human's direction |
 
-All of these except part 3 run `main` bf9b274. `main`'s history was rewritten on Nov 23 with the code unchanged, so bf9b274 is now 94d334c; the old commits stay reachable locally under the tags `archive/*-20261123`.
+All of these except part 3 run `main` bf9b274; the object half for initial states 0–24 (60487512) runs 47200a9, which adds the worker-port fix.
 
 **Human decisions**
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -49,6 +49,7 @@ All of these except part 3 run `main` bf9b274. `main`'s history was rewritten on
 
 **Latest fixes (Nov 22 23:30 to Nov 23 00:50)**
 - **Teacher stall:** at PEAR's 32 episodes at once, the teacher's KV cache was full (97%, 208 preemptions, no prefix hits). Now 12 at once for the teacher and 8 per student GPU.
+- **Ray worker ports (main 47200a9):** two clusters starting on one node at once drew the same worker port from Ray's fixed range (the object 0–24 half, 60486050, crashed). Workers now take OS-assigned ports. The CPU suite passes 75 of 75, and the two-cluster test, now with 8 actors per cluster, passes (60486976).
 - **Jobs sharing a node killed each other** (baselines 60479702 and 60479703). Every Ray cluster used port 6379 and one temporary directory, and `ray stop --force` stopped all of the user's clusters on the machine. Fixed on `main` (bf9b274): each run gets a free port and its own temporary directory, and stops only its own processes. The head address is now resolved as IPv4 (off Slurm, `getent hosts` returned IPv6 first and the run waited forever), and a cluster that fails to start fails its run within 10 minutes.
 - **Tests on bf9b274:** the CPU suite passes 75 of 75. `repo_tests/two_clusters.sbatch` runs two clusters on one node, under Slurm (60482850) and off it (60482851). It passes both times: separate clusters, the short run's exit leaves the long one's task to complete, no processes are left over, and a node that cannot start fails its run in 44 s. On the old code it fails (60482296).
 
