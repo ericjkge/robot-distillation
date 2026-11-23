@@ -20,7 +20,7 @@ The direction is dead if the on-policy-distilled 9B student, evaluated with PEAR
 2. Its success rate is above 21.9%, the teacher's paper number at low effort.
 3. Its mean wall-clock time per episode is below the teacher's at xhigh, measured on the same hardware.
 
-The 4B student is reported alongside the 9B student but does not decide the direction.
+The 4B student is not run (human, Nov 23).
 
 ## Current state
 
@@ -32,14 +32,14 @@ The 4B student is reported alongside the 9B student but does not decide the dire
 | --- | --- | --- |
 | Teacher episodes (goal, spatial, object, libero_10) | goal 60512585, spatial 60512542, object 60512543, libero_10 60512544 (all resumable) | spatial running since 14:48: task 4 reached 30 kept; task 9 has 17 of 47 ended, so it will end its 50 trials short of 25. Goal (51 kept, 426 episodes left), object and libero_10 queued |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial done (500 episodes, 0 successes); 6 running; at 16:58 2/1,604 (goal 2/417, object 0/410, libero_10 0/277); five resumed after preemptions (see Latest fixes); for the presentation today at 17:00 |
-| Base baseline 4B | none | cancelled to make room; resubmit after the presentation |
 | Smoke part 3 (distill, export, eval) | 60517692 | candidate verl fix with a probe (see Blocked on) |
-| SFT 9B / 4B | 60517720, 60517721 | afterok on the four collection jobs (resumable, so a preemption no longer breaks the chain) |
+| SFT 9B | 60517720 | afterok on the four collection jobs (resumable, so a preemption no longer breaks the chain) |
 | OPD | none | not yet, at the human's direction |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
 **Human decisions**
+- No 4B runs: the 4B baseline and SFT are dropped (17:10); 9B only.
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
