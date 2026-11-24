@@ -8,7 +8,7 @@
 #SBATCH --requeue
 #SBATCH --gres=gpu:2,vram:48G
 #SBATCH --time=2-00:00:00
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=11  # the gpu partition's QOS allows 34 CPUs per user: three of these jobs
 # host memory: libero_goal peaked at 75 GB (MaxRSS)
 #SBATCH --mem=128G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/collect-%x-%j.out
@@ -44,12 +44,12 @@ if [ ! -s "$RUN/episodes.json" ]; then
   exit 0
 fi
 start=$SECONDS
-# 16 CPUs: Ray reserves 4 for the replica's placement group (2 per GPU), which leaves 12 for 8 simulators, 3 storage
-# units and the queue's controller. 4 episodes at once: a TP4 replica on 4 L40S holds about 13 long contexts (at PEAR's
+# 11 CPUs: Ray reserves 4 for the replica's placement group (2 per GPU), which leaves 7 for 4 simulators (one per
+# episode at once), 2 storage units and the queue's controller. 4 episodes at once: a TP4 replica on 4 L40S holds about 13 long contexts (at PEAR's
 # 32 it evicted and recomputed them: libero_goal 60470355, 97% full, 208 preemptions), and TP2 has about a quarter of
 # that KV cache
-SESSIONS_PER_REPLICA=4 LIBERO_SERVERS=8 EPISODES=$RUN/episodes.json TP=2 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
-  setsid bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=3 &
+SESSIONS_PER_REPLICA=4 LIBERO_SERVERS=4 EPISODES=$RUN/episodes.json TP=2 MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$RUN \
+  setsid bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=2 &
 COLLECT=$!
 until ! kill -0 "$COLLECT" 2>/dev/null || "$WORK_DIR/envs/verl/bin/python" "$HERE/enough.py" "$SUITE_DIR" --tasks "$TASKS"; do sleep 60; done
 if kill -0 "$COLLECT" 2>/dev/null; then
