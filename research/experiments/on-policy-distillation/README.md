@@ -24,14 +24,14 @@ The 4B student is not run (human, Nov 23).
 
 ## Current state
 
-*Updated 2026-11-23 20:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 21:00. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9) on 2 GPUs: 60554675 / 60554677, 60554678 / 60554679, 60554680 / 60554681 | queued; at 18:57 Slurm estimates their starts at Nov 25 03:00 to Nov 27 04:30: others' jobs on gpu_requeue have about twice our priority (1.3M vs 0.64M, fairshare). On `gpu` (costs priority), 2 GPUs would start about 20:15 today and 4 about 06:45 Nov 24 (`sbatch --test-only`) |
-| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial and goal 0–24 done; 5 running; at 19:57 2/1,786 (goal 2/463, object 0/496, libero_10 0/327, spatial 0/500); |
+| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9) on 2 GPUs: 60554675 / 60554677, 60554678 / 60554679, 60554680 / 60554681 | queued; at 20:57 Slurm estimates their starts at Nov 24 21:50 to Nov 27 03:10: others' jobs on gpu_requeue have about twice our priority (1.3M vs 0.64M, fairshare). On `gpu` (costs priority), 2 GPUs would start about 20:15 today and 4 about 06:45 Nov 24 (`sbatch --test-only`) |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial, object and goal 0–24 done; 3 running (libero_10 both halves, goal 25–49) |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 03:30) | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B | 60556633 | afterok on the six TP2 collection jobs (spatial done); checkpoints every 10 steps so a requeue resumes (60554683 cancelled for that) |
 | OPD 9B, from the SFT checkpoint | 60556634 | afterok on SFT; runs until stopped by hand (STEPS=1000 is only a bound) |
