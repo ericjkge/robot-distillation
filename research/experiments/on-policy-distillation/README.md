@@ -24,14 +24,14 @@ The 4B student is not run (human, Nov 23).
 
 ## Current state
 
-*Updated 2026-11-23 22:20. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
+*Updated 2026-11-23 23:45. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
 **Now running or queued**
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9), TP2, on `gpu,gpu_requeue`: 60576750 / 60576751, 60576883 / 60576884, 60576885 / 60576886 | queued (22:20); the `gpu_requeue`-only jobs 60554675–81 were cancelled: Slurm had moved their estimated starts to Nov 28 |
-| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial, object and goal 0–24 done; 3 running (libero_10 both halves, goal 25–49) |
+| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9), TP2, on `gpu_requeue,gpu,gpu_quad`: 60576750 / 60576751, 60576883 / 60576884, 60576885 / 60576886 | queued; at 23:40 Slurm still estimates Nov 29 or later on every partition: 31–42 pending jobs per partition have more priority than ours (fairshare). `sbatch --test-only` had promised `gpu` tonight, but it ignores the queue ahead. `gpu_quad` (same cost as `gpu`) added at 23:45 for more nodes |
+| Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial, object and goal done; libero_10 both halves running |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 03:30) | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B | 60576892 | afterok on the six collection jobs; checkpoints every 10 steps |
 | OPD 9B, from the SFT checkpoint | 60576893 | afterok on SFT; runs until stopped by hand |
