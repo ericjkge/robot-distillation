@@ -30,7 +30,7 @@ The 4B student is not run (human, Nov 23).
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes | spatial done (300 kept). TP2 jobs on `gpu,gpu_quad,gpu_requeue`, excluding the 11 RTX 8000 nodes (no bf16): goal 5–9 60576751; goal 0–1 60603274, 2–4 60603275; object 0–4 60576883, 5–9 60576884; libero_10 0, 1, 2, 3: 60603256–59, 4–5, 6–7, 8–9: 60603276–78 | goal 5–9 running since 04:09 (A40): 5 episodes by 05:51, all kept. A teacher episode on goal takes about an hour at xhigh, so a 4-session job makes about 3.3 an hour (TP4, 12 sessions: 12 an hour on goal, 49 on spatial). At that rate a 5-task libero_10 job (250 trials) would take about 3 days, so at 05:53 the jobs not yet started were split finer: libero_10 into 7 jobs, goal 0–4 into 2 (the direction's 16-job limit allows no more). Object 0–4 running since 06:10 (same A40 node; 12 kept in its first hour), object 5–9 since 07:59. At 10:17: object 117 of 250 kept (about 39 an hour, done about 14:00), goal 5–9 37 of 125; the rest are estimated Nov 27 08:50 (libero_10 0) to Nov 28 19:40 (libero_10 8–9). Earlier: goal 0–4 (60576750) landed on an RTX 8000 at 03:43 and failed at vLLM start |
+| Teacher episodes | spatial done (300 kept). Running (old per-suite script): goal 5–9 60576751, object 0–4 60576883, object 5–9 60576884. The rest (goal 0–4, libero_10) as 30 units (task × trials 0–24 / 25–49) shared by 9 workers, 60623284–60623300, each a TP2 job on `gpu,gpu_quad,gpu_requeue` excluding the 11 RTX 8000 nodes | at 10:17: object 117 of 250 kept (about 39 an hour, done about 14:00), goal 5–9 37 of 125. A goal or libero_10 episode takes about an hour at xhigh, 4 at a time per job, and the queue, not the episodes, was the bottleneck: per-task jobs were estimated to start as late as Nov 29. So at 10:40 every queued job became a worker that claims the next unit not yet claimed by a running job and keeps its GPUs until no unit is left (`collect/collect.sbatch`, UNITS) |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial, object, goal and libero_10 25–49 done (03:05); libero_10 0–24 running; 2/1,952 so far |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 04:36) | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B | 60576892 | afterok on the six collection jobs; checkpoints every 10 steps |
@@ -38,6 +38,7 @@ The 4B student is not run (human, Nov 23).
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
+- Teacher rollouts first (Nov 24 10:30): every suite's rollouts must finish as soon as possible, because a teammate is waiting on them for a separate SFT run.
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -94,7 +95,7 @@ After the presentation, tally the finished 9B baseline (`python3 baseline/tally.
 
 ## Blocked on
 
-- **Nov 29 (human decision needed, 09:17 Nov 24):** at the current pace OPD cannot finish before Nov 29. Goal and libero_10 teacher episodes take about an hour each at xhigh, and many end in failure, so tasks run to the 50-trial cap: goal 5–9 alone needs about 130 more trials, about 54 h at 2.4 an hour. Libero_10's jobs are estimated to start Nov 27 08:50 – Nov 28 19:40 (10:17). Object will be done today. The levers are the human's:
+- **Nov 29 (asked 09:17 Nov 24; the human answered 10:30 that the teacher rollouts come first, see Human decisions):** at the current pace OPD cannot finish before Nov 29. Goal and libero_10 teacher episodes take about an hour each at xhigh, and many end in failure, so tasks run to the 50-trial cap: goal 5–9 alone needs about 130 more trials, about 54 h at 2.4 an hour. Libero_10's jobs are estimated to start Nov 27 08:50 – Nov 28 19:40 (10:17). Object will be done today. The levers are the human's:
   - SFT starts at a cutoff with whatever has been kept, instead of waiting for every suite.
   - Each task stops after fewer trials (e.g. 30 instead of 50), which cuts most of the failing tasks' time.
 - **OPD, the verl mini-batch bug:** the human chose a verl patch shipped from this repo, plus an upstream report to PEAR (09:20). The earlier diagnosis was incomplete: `train_mini_batch` already repairs the whole batch before selecting, and on CPU that repair holds, even through a consolidated pickle. So something in the GPU path undoes it. The candidate fix repairs the batch before every selection, inside verl's iterator. Smoke part 3 runs it from a patched copy of 47200a9 (`code/47200a9-mbfix`, `VERL_CHANGE_IN_PROGRESS=1`), with a probe that logs `_ragged_idx` before each selection (60517692). Next: ship the patch to `main` and open the PEAR report.
