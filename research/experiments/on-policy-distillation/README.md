@@ -30,7 +30,7 @@ The 4B student is not run (human, Nov 23).
 
 | Step | Jobs | State |
 | --- | --- | --- |
-| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9), TP2, on `gpu_requeue,gpu,gpu_quad`: 60576750 / 60576751, 60576883 / 60576884, 60576885 / 60576886 | queued; at 23:40 Slurm still estimates Nov 29 or later on every partition: 31–42 pending jobs per partition have more priority than ours (fairshare). `sbatch --test-only` had promised `gpu` tonight, but it ignores the queue ahead. `gpu_quad` (same cost as `gpu`) added at 23:45 for more nodes |
+| Teacher episodes | spatial done (300 kept, 17:26); goal, object, libero_10 each split in two by task (0–4 / 5–9), TP2, on `gpu_requeue,gpu,gpu_quad`: 60576750 / 60576751, 60576883 / 60576884, 60576885 / 60576886 | queued; at 00:10 Slurm estimates Nov 26 14:20–17:20 (with `gpu_quad`; at 23:40 it was Nov 29 or later): 31–42 pending jobs per partition have more priority than ours (fairshare). `sbatch --test-only` had promised `gpu` tonight, but it ignores the queue ahead. `gpu_quad` (same cost as `gpu`) added at 23:45 for more nodes |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | spatial, object and goal done; libero_10 both halves running |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 03:30) | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B | 60576892 | afterok on the six collection jobs; checkpoints every 10 steps |
