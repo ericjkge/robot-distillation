@@ -1,9 +1,8 @@
 #!/bin/bash
 # Teacher-episode collection: the 27B teacher at xhigh effort over LIBERO's episodes (10 tasks x 50 initial states per
 # suite), PEAR's protocol, keeping every successful episode's full multi-round context under $RUNS/<suite>/episodes,
-# until each task has the 25 that SFT draws, has ended its 50 trials or has ended 15 without a success (enough.py). One TP2
-# replica on any two GPUs of 48 GB or more: L40S, A40, A6000 or A100 (54 GB of weights in bf16); two GPUs start far
-# sooner than four.
+# until each task has the 25 that SFT draws or has ended its 50 trials (enough.py). One TP2 replica on any two GPUs of
+# 48 GB or more: L40S, A40, A6000 or A100 (54 GB of weights in bf16); two GPUs start far sooner than four.
 # The job works through UNITS ("suite:task:trials", e.g. "libero_10:3:0-24"; default: SUITE's TASKS, all trials) in
 # order, claiming each unit so that jobs given the same list share it: a job keeps its GPUs while any unit is left, and
 # a job that starts late finds the units done or claimed and ends.
@@ -55,7 +54,7 @@ for unit in $UNITS; do
   SUITE_DIR=$OUT/runs/collect-${CODE_SHA:0:7}/$SUITE
   RUN=$SUITE_DIR/attempt-$SLURM_JOB_ID-${SLURM_RESTART_COUNT:-0}-tasks$TASKS-trials$TRIALS
   mkdir -p "$RUN"
-  python3 "$HERE/../baseline/remaining.py" "$HERE/$SUITE.json" "$TRIALS" "$SUITE_DIR" --keep 25 --give-up 15 --tasks "$TASKS" \
+  python3 "$HERE/../baseline/remaining.py" "$HERE/$SUITE.json" "$TRIALS" "$SUITE_DIR" --keep 25 --tasks "$TASKS" \
     > "$RUN/episodes.json"
   if [ ! -s "$RUN/episodes.json" ]; then
     echo "collect $unit: done"
