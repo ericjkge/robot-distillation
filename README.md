@@ -15,6 +15,8 @@ distillation) avoids the compounding errors of imitating teacher trajectories al
 - **Students:** [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) and [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B). They share the teacher's tokenizer and use
   its chat template, which sets the reasoning effort in the system prompt, so a student's prompts match the teacher's
   token for token.
+- **Teacher rollouts:** [eddykang06/qwen3.8-27b-pear-libero-rollouts](https://huggingface.co/datasets/eddykang06/qwen3.8-27b-pear-libero-rollouts), the teacher's
+  episodes at xhigh effort (step 1), used for SFT
 - **Benchmarks:** LIBERO (2,000 episodes: 4 suites × 10 tasks × 50 initial states), LIBERO-Pro and LIBERO-Plus
 
 ## Pipeline
