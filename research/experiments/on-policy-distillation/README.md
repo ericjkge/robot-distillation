@@ -44,7 +44,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - No early stop (Nov 25 13:00): the human declined giving up on a task after 15 trials without a success; every task runs to 25 kept or 50 trials.
 - Teammate also takes libero_10 tasks 5–9 (Nov 25 12:35; claims name 60162454). Our libero_10 task 3 run was stopped by mistake at 12:29 and took relayed job 60576883 down with it: killing the run's process group from an `srun --overlap` step ended the job step that holds the relay. 60576883 was requeued (pending). Task 3 (0 kept of 7) stays ours: 60576884 reaches trials 25–49 after task 4; trials 0–24 wait for 60576883 or a worker. Lesson: never signal a relayed run from outside; let `enough.py` end it.
 - Teammate also takes libero_10 task 3 (Nov 25 12:40). Ours: goal 5–9 (60576751), libero_10 4 and 1–2 trials 25–49 (60576884). The ten queued workers and requeued 60576883 were cancelled; SFT 60576892 depends afterany on 60576751 and 60576884 and is held until the teammate's episodes (goal 0–4, libero_10 3 and 5–9) are merged.
-- Teacher rollouts go to the Hub dataset `eddykang06/qwen3.8-27b-pear-libero-rollouts` (private, Nov 25), shared with the teammate's cluster: `<suite>/records/<source>.jsonl` (every episode run), `<suite>/episodes/<uid>.pt` (successes), `index.jsonl` and the card, staged by `collect/hub.py` under `$OUT/hub/`. Synced hourly from the running jobs; at Nov 25 15:39: 918 episode runs, 787 successful.
+- Teacher rollouts go to the Hub dataset `eddykang06/qwen3.8-27b-pear-libero-rollouts` (private, Nov 25), shared with the teammate's cluster: `<suite>/records/<source>.jsonl` (every episode run), `<suite>/episodes/<uid>.pt` (successes), `index.jsonl` and the card, staged by `collect/hub.py` under `$OUT/hub/`. Synced hourly from the running jobs (`collect/pull.py` first, so the index covers every cluster); at Nov 25 16:40: 923 episode runs, 792 successful. `opd.select_episodes` reads a Hub download as a source (main 6005c4f, Nov 25, at the human's request).
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -98,9 +98,11 @@ How the 1,417 episodes end: 60% at the first turn with no executable action, 23%
 
 ## Next step
 
-After the presentation, tally the finished 9B baseline (`python3 baseline/tally.py runs/baseline-bf9b274/Qwen3.5-9B runs/baseline-47200a9/Qwen3.5-9B`) for the presentation (`baseline/tally.py`), flagging libero_10 and object 0–24 as partial.
+When the teammate's episodes are on the Hub (`<suite>/records/<cluster>.jsonl` and `<suite>/episodes/<uid>.pt`) and our two collection jobs have ended: `srun --jobid=<a running job> --overlap -n1 --cpus-per-task=4 bash sft/build_set.sh` (pulls them with `collect/pull.py`, re-indexes, draws `runs/collect-bf9b274/sft-set` with main 6005c4f), then `scontrol release 60576892`. Dry-run Nov 25 16:40: 696 episodes of 792, 32 tasks.
 
 ## Blocked on
+
+- **SFT and OPD start late (Nov 25 16:30):** Slurm estimates, from our priority on `gpu_requeue`, put a 4×48 GB job (SFT, and the smoke that checks the verl fix) at Nov 29 12:50 and the 8-GPU OPD job at Nov 30 13:00, past the Nov 29 deadline; smaller shapes (2 GPUs, 80 GB, 12 h) estimate the same. `gpu` refuses SFT's 450G (QOSMaxMemoryPerUser). The human decides whether SFT and OPD may use other partitions or a smaller footprint.
 
 - **Nov 29 (asked 09:17 Nov 24; the human answered 10:30 that the teacher rollouts come first, see Human decisions):** at the current pace OPD cannot finish before Nov 29. Goal and libero_10 teacher episodes take about an hour each at xhigh, and many end in failure, so tasks run to the 50-trial cap: goal 5–9 alone needs about 130 more trials, about 54 h at 2.4 an hour. Libero_10's jobs are estimated to start Nov 27 08:50 – Nov 28 19:40 (10:17). Object will be done today. The levers are the human's:
   - SFT starts at a cutoff with whatever has been kept, instead of waiting for every suite.
