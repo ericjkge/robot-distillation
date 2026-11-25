@@ -34,6 +34,7 @@ The 4B student is not run (human, Nov 23).
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | done Nov 24 11:47: 2 successes in 2,000 (see Results) |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 04:36) | candidate verl fix with a probe (see Blocked on) |
 | SFT 9B | 60783661 (`gpu_quad,gpu_requeue`) | no dependency, so it gains age priority; at start it waits, polling every 10 min, until every task is complete on the Hub (`collect/complete.py`), then draws the set (`sft/build_set.sh`); checkpoints every 10 steps |
+| Publish SFT to the Hub (`sft/publish.sbatch`: private `eddykang06/qwen3.5-9b-pear-libero-sft`, in the robot-distillation collection with the rollouts; human, Nov 25) | 60789893 | afterok:60783661 |
 | OPD 9B, from the SFT checkpoint | 60576893 | afterok:60783661; runs until stopped by hand |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
@@ -44,7 +45,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - No early stop (Nov 25 13:00): the human declined giving up on a task after 15 trials without a success; every task runs to 25 kept or 50 trials.
 - Teammate also takes libero_10 tasks 5–9 (Nov 25 12:35; claims name 60162454). Our libero_10 task 3 run was stopped by mistake at 12:29 and took relayed job 60576883 down with it: killing the run's process group from an `srun --overlap` step ended the job step that holds the relay. 60576883 was requeued (pending). Task 3 (0 kept of 7) stays ours: 60576884 reaches trials 25–49 after task 4; trials 0–24 wait for 60576883 or a worker. Lesson: never signal a relayed run from outside; let `enough.py` end it.
 - Teammate also takes libero_10 task 3 (Nov 25 12:40). Ours: goal 5–9 (60576751), libero_10 4 and 1–2 trials 25–49 (60576884). The ten queued workers and requeued 60576883 were cancelled; SFT 60576892 depends afterany on 60576751 and 60576884 and is held until the teammate's episodes (goal 0–4, libero_10 3 and 5–9) are merged.
-- Teacher rollouts go to the Hub dataset `eddykang06/qwen3.8-27b-pear-libero-rollouts` (private, Nov 25), shared with the teammate's cluster: `<suite>/records/<source>.jsonl` (every episode run), `<suite>/episodes/<uid>.pt` (successes), `index.jsonl` and the card, staged by `collect/hub.py` under `$OUT/hub/`. Synced hourly from the running jobs (`collect/pull.py` first, so the index covers every cluster); at Nov 25 16:45: 923 episode runs, 792 successful; libero_10 1, 2 done, 4 at 21/25. `opd.select_episodes` reads a Hub download as a source (main 6005c4f, Nov 25, at the human's request).
+- Teacher rollouts go to the Hub dataset `eddykang06/qwen3.8-27b-pear-libero-rollouts` (private, Nov 25), shared with the teammate's cluster: `<suite>/records/<source>.jsonl` (every episode run), `<suite>/episodes/<uid>.pt` (successes), `index.jsonl` and the card, staged by `collect/hub.py` under `$OUT/hub/`. Synced hourly from the running jobs (`collect/pull.py` first, so the index covers every cluster); at Nov 25 16:45: 923 episode runs, 792 successful; libero_10 0–2 and 4 done (100 episodes); at 17:25: 930 runs, 797 successful. `opd.select_episodes` reads a Hub download as a source (main 6005c4f, Nov 25, at the human's request).
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
@@ -81,6 +82,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
 - SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G, `--requeue`; partition then `gpu_quad,gpu_requeue`; no dependency; the set drawn at start by `sft/build_set.sh` (main 6005c4f); `trainer.save_freq=10`; now 60783661.
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
+- Publish SFT (`sft/publish.sbatch`): short, 4 h, 4 CPUs, 16G, afterok:60783661; 60789893.
 - OPD, code `code/47200a9-mbfix` (`opd/run.sbatch`): gpu:8,vram:48G (A6000), 5 days, 20 CPUs, 500G; 4 trainer, 2 rollout (8 episodes each), 2 teacher (TP2) GPUs; batch 64, `max_off_policy_threshold=1`, validation every 10 updates on PEAR's LIBERO-Goal validation episodes; checkpoints every update; now 60576893, afterok:60576892.
 
 ## Results
