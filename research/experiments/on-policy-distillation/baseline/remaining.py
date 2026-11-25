@@ -1,8 +1,9 @@
 """The episode file of a job's episodes that no earlier attempt of the job finished, so that a requeued job resumes
 rather than reruns: one product per task, of the trials in TRIALS not yet in a record under the job's directory (in
 its attempts' val_dumps/). With --keep, a task that already has that many episodes kept (a collection's
-episodes/<uid>.pt) is left out; --tasks keeps only those of the suite's tasks (a suite split across jobs).
-    python remaining.py <suite episode file> <trials, e.g. 0-24> <job dir> [--keep 25] [--tasks 0-4] > episodes.json
+episodes/<uid>.pt) is left out, and with --give-up one that has ended that many trials without one kept; --tasks keeps
+only those of the suite's tasks (a suite split across jobs).
+    python remaining.py <suite episode file> <trials, e.g. 0-24> <job dir> [--keep 25] [--give-up 15] [--tasks 0-4] > episodes.json
 Prints nothing when every episode is done."""
 
 import argparse
@@ -15,6 +16,7 @@ parser.add_argument("suite_file", type=Path)
 parser.add_argument("trials")
 parser.add_argument("job_dir", type=Path)
 parser.add_argument("--keep", type=int)
+parser.add_argument("--give-up", type=int)
 parser.add_argument("--tasks")
 args = parser.parse_args()
 
@@ -30,7 +32,7 @@ def numbers(ranges: str) -> list[int]:
 
 episode_file = json.loads(args.suite_file.read_text())
 env = episode_file["env"]
-done, kept = set(), Counter()
+done, ended, kept = set(), Counter(), Counter()
 for dump in args.job_dir.glob("**/val_dumps/*.jsonl"):
     for line in dump.read_text().splitlines():
         try:
@@ -39,6 +41,7 @@ for dump in args.job_dir.glob("**/val_dumps/*.jsonl"):
             continue
         episode = record["extra_fields"]["episode"]["env"]
         done.add((int(episode["task_id"]), int(episode["trial_id"])))
+        ended[int(episode["task_id"])] += 1
         kept[int(episode["task_id"])] += (
             dump.parent.parent / "episodes" / f"{record['uid']}.pt"
         ).exists()
@@ -46,6 +49,8 @@ for dump in args.job_dir.glob("**/val_dumps/*.jsonl"):
 products = []
 for task in numbers(args.tasks or env["task_id"]):
     if args.keep is not None and kept[task] >= args.keep:
+        continue
+    if args.give_up is not None and not kept[task] and ended[task] >= args.give_up:
         continue
     left = [trial for trial in numbers(args.trials) if (task, trial) not in done]
     if left:

@@ -41,6 +41,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - Teacher rollouts first (Nov 24 10:30): every suite's rollouts must finish as soon as possible, because a teammate is waiting on them for a separate SFT run.
 - No other account (Nov 24 13:10): do everything to finish the teacher rollouts and SFT as soon as possible.
 - Split with a teammate (Nov 25 12:40): our jobs finish libero_10; the teammate collects libero_goal tasks 0–4 (episode list `runs/collect-bf9b274/handoff/libero_goal-tasks-0-4.json`, the trials no run has ended), under the same rule (25 kept or 50 trials). Our jobs skip those units: their claims name 60162454 (vla-agent-host), so delete the claim files to take them back. A trials 0–24 budget (~775 SFT episodes, ~Nov 26) was considered and declined.
+- Early stop (Nov 25 12:50): a task with no success after 15 trials ends there (`enough.py --give-up 15`, live in the running jobs; `remaining.py --give-up` leaves it out of later units). It saves libero_10 task 3 about 35 three-hour failures.
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
