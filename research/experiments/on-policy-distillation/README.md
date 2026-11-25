@@ -42,6 +42,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - No other account (Nov 24 13:10): do everything to finish the teacher rollouts and SFT as soon as possible.
 - Split with a teammate (Nov 25 12:40): our jobs finish libero_10; the teammate collects libero_goal tasks 0–4 (episode list `runs/collect-bf9b274/handoff/libero_goal-tasks-0-4.json`, the trials no run has ended), under the same rule (25 kept or 50 trials). Our jobs skip those units: their claims name 60162454 (vla-agent-host), so delete the claim files to take them back. A trials 0–24 budget (~775 SFT episodes, ~Nov 26) was considered and declined.
 - No early stop (Nov 25 13:00): the human declined giving up on a task after 15 trials without a success; every task runs to 25 kept or 50 trials.
+- Teammate also takes libero_10 tasks 5–9 (Nov 25 12:35; claims name 60162454). Our libero_10 task 3 run was stopped by mistake at 12:29 and took relayed job 60576883 down with it: killing the run's process group from an `srun --overlap` step ended the job step that holds the relay. 60576883 was requeued (pending). Task 3 (0 kept of 7) stays ours: 60576884 reaches trials 25–49 after task 4; trials 0–24 wait for 60576883 or a worker. Lesson: never signal a relayed run from outside; let `enough.py` end it.
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
