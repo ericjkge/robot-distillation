@@ -33,7 +33,7 @@ for suite, lines in records.items():
     (stage / suite / "records").mkdir(parents=True, exist_ok=True)
     (stage / suite / "records" / f"{source}.jsonl").write_text("".join(lines))
 
-index, kept, ended = [], Counter(), Counter()
+index, kept, ended, trials = [], Counter(), Counter(), defaultdict(set)
 for path in sorted(stage.glob("*/records/*.jsonl")):
     for line in path.read_text().splitlines():
         record = json.loads(line)
@@ -42,11 +42,14 @@ for path in sorted(stage.glob("*/records/*.jsonl")):
         success = record["score"] >= 1  # opd.collect saved its episode
         ended[env["suite"], int(env["task_id"])] += 1
         kept[env["suite"], int(env["task_id"])] += success
+        trials[env["suite"], int(env["task_id"])].add(int(env["trial_id"]))
         index.append({"suite": env["suite"], "task_id": int(env["task_id"]), "trial_id": int(env["trial_id"]),
                       "success": success, "num_turns": record["num_turns"], "uid": record["uid"],
                       "source": path.stem, "episode": episode if success else None})
 (stage / "index.jsonl").write_text("".join(json.dumps(row) + "\n" for row in index))
 
+complete = sum(kept[suite, t] >= 25 or len(trials[suite, t]) >= 50 for suite in SUITES for t in range(10))
+status = "Complete." if complete == 40 else f"In progress: {complete} of 40 tasks complete; the table updates as runs finish."
 rows = []
 for suite in SUITES:
     cells = [f"{kept[suite, t]}/{ended[suite, t]}" if ended[suite, t] else "–" for t in range(10)]
@@ -63,7 +66,7 @@ reasoning effort on LIBERO's four suites, with [PEAR](https://github.com/mit-han
 task and initial state (trial, 0–49). Collected with
 [robot-distillation](https://github.com/ericjkge/robot-distillation) (`scripts/collect.sh`) as SFT data.
 
-Each task ran until it had 25 successful episodes or had run all 50 trials.
+Each task runs until it has 25 successful episodes or has run all 50 trials. {status}
 
 ## Successful / run, per task
 
