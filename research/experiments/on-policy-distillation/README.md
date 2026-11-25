@@ -33,8 +33,8 @@ The 4B student is not run (human, Nov 23).
 | Teacher episodes | spatial and object done (300, 250 kept). Running (old per-suite script): goal 5–9 60576751, object 0–4 60576883, object 5–9 60576884. The rest (goal 0–4, libero_10) as 30 units (task × trials 0–24 / 25–49) shared by 10 workers, 60623284–60623300 and 60630347 (added when the baseline freed a job slot), each a TP2 job on `gpu,gpu_quad,gpu_requeue` excluding the 11 RTX 8000 nodes | at 12:56: object 219 of 250 kept (tasks 4, 6, 9 done, the rest at 17–23; done about 14:00), goal 5–9 38 of 125 (tasks 5 and 9 at 2 and 3 kept; they run to 50 trials, about 2 more days). A goal or libero_10 episode takes about an hour at xhigh, 4 at a time per job, and the queue, not the episodes, was the bottleneck: per-task jobs were estimated to start as late as Nov 29. So at 10:40 every queued job became a worker that claims the next unit not yet claimed by a running job and keeps its GPUs until no unit is left (`collect/collect.sbatch`, UNITS). At Nov 25 11:17 the first workers are estimated Nov 29 13:40: every node of the three partitions is allocated or held for higher-priority jobs. Shorter time limits (4, 8, 12 h) did not move the estimates, and no account with more fairshare exists. So from 13:30 the three running jobs relay: each, once its suite is done, stops its run and works through the same 30 units in its own allocation until its limit (Nov 26 04:09–07:59), rather than ending (`enough.py`, the list in `runs/collect-bf9b274/relay`). Object 5–9 (60576884) relayed at 14:14: libero_10 task 0 trials 0–24, task 0 done (25 kept) by 17:39; 91 kept by Nov 25 14:39 (tasks 1–4: 25, 20, 0 of 7, 21 of 25; task 3 episodes take about 3 h). Object done (250) by 17:39; 60576883 relayed too (libero_10 task 1). Their run then exits 143, so SFT waits on them with afterany, the workers still with afterok |
 | Base baseline 9B, each suite split in two (initial states 0–24 / 25–49; tally: `baseline/tally.py`) | goal 60512338 / 60512340, spatial 60512341 / 60486049, object 60512117 / 60486072, libero_10 60512116 / 60486085 | done Nov 24 11:47: 2 successes in 2,000 (see Results) |
 | Smoke part 3 (distill, export, eval) | 60517692 (any 4 GPUs of 48 GB, was L40S only; estimated start Nov 24 04:36) | candidate verl fix with a probe (see Blocked on) |
-| SFT 9B | 60576892 | afterok on the six collection jobs; checkpoints every 10 steps |
-| OPD 9B, from the SFT checkpoint | 60576893 | afterok on SFT; runs until stopped by hand |
+| SFT 9B | 60783661 (`gpu_quad,gpu_requeue`) | no dependency, so it gains age priority; at start it draws the set from the Hub (`sft/build_set.sh`); checkpoints every 10 steps |
+| OPD 9B, from the SFT checkpoint | 60576893 | afterok:60783661; runs until stopped by hand |
 
 The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–49, object 25–49, libero_10 25–49, collection and SFT run bf9b274.
 
@@ -48,6 +48,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 **Human decisions**
 - No 4B runs: the 4B baseline and SFT are dropped (17:10).
 - Students use the teacher's chat template (reasoning effort in the system prompt; every round's reasoning kept).
+- SFT may start before the teacher rollouts finish (Nov 25): it uses the episodes on the Hub when it starts.
 - SFT: 25 successful episodes per task, drawn at random (all of a task's if it has fewer); lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs.
 - Base baselines: full LIBERO (2,000 episodes, PEAR's protocol), xhigh, LIBERO only.
 - As fast as possible (17:15): one finished 9B run, SFT then OPD; no OPD from the untuned student. So collection moved to 2 GPUs (TP2, 4 episodes at once), which start far sooner than 4, each suite split in two by task; the 4-GPU jobs (60512543, 60512544, 60512585; Slurm estimated Nov 26–27) were cancelled. OPD will use `max_off_policy_threshold=1` (Algorithm 1).
@@ -78,7 +79,7 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 - Collection, code bf9b274 (`collect/collect.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 128G; 12 episodes at once. Spatial, object and libero_10 resubmitted (60512542–44), and goal (60512585), with the same header and code, so all suites land in `runs/collect-bf9b274`.
 - Collection TP2, code bf9b274 (`collect/collect.sbatch` from fae6d88 on; `TASKS` selects the tasks): gpu:2,vram:48G, 2 days, 11 CPUs (the `gpu` QOS allows 34 CPUs and 420G per user: three jobs at once), 128G; 4 episodes at once, 4 simulators; partition then updated to `gpu,gpu_requeue`. Same `runs/collect-bf9b274`.
 - Baselines, code bf9b274 (`baseline/eval.sbatch`, `TRIALS` selects the initial states): gpu:1,vram:45G, 3 days, 10 CPUs, 64G (35 GB measured); 8 episodes at once. The resumed halves (60512116, 60512117, 60512338, 60512340, 60512341) run code 47200a9 with the same header.
-- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G (4B: 224G); afterok on collection (now 60576892: the 12 collection jobs above), `trainer.save_freq=10`.
+- SFT, code bf9b274 (`sft/run.sbatch`): gpu:4,vram:48G, 2 days, 20 CPUs, 450G, `--requeue`; partition then `gpu_quad,gpu_requeue`; no dependency; the set drawn at start by `sft/build_set.sh` (main 6005c4f); `trainer.save_freq=10`; now 60783661.
 - Smoke part 3, code 47200a9 (`smoke/part3.sbatch`): gpu:l40s:4, 1h15, 16 CPUs, 192G.
 - OPD, code `code/47200a9-mbfix` (`opd/run.sbatch`): gpu:8,vram:48G (A6000), 5 days, 20 CPUs, 500G; 4 trainer, 2 rollout (8 episodes each), 2 teacher (TP2) GPUs; batch 64, `max_off_policy_threshold=1`, validation every 10 updates on PEAR's LIBERO-Goal validation episodes; checkpoints every update; now 60576893, afterok:60576892.
 
@@ -98,11 +99,11 @@ How the 1,417 episodes end: 60% at the first turn with no executable action, 23%
 
 ## Next step
 
-When the teammate's episodes are on the Hub (`<suite>/records/<cluster>.jsonl` and `<suite>/episodes/<uid>.pt`) and our two collection jobs have ended: `srun --jobid=<a running job> --overlap -n1 --cpus-per-task=4 bash sft/build_set.sh` (pulls them with `collect/pull.py`, re-indexes, draws `runs/collect-bf9b274/sft-set` with main 6005c4f), then `scontrol release 60576892`. Dry-run Nov 25 16:40: 696 episodes of 792, 32 tasks.
+Before SFT 60783661 starts, the teammate uploads their episodes to the Hub (`<suite>/records/<cluster>.jsonl` and `<suite>/episodes/<uid>.pt`, not `index.jsonl` or the card); SFT pulls and draws whatever is there at its start.
 
 ## Blocked on
 
-- **SFT and OPD start late (Nov 25 16:30):** Slurm estimates, from our priority on `gpu_requeue`, put a 4×48 GB job (SFT, and the smoke that checks the verl fix) at Nov 29 12:50 and the 8-GPU OPD job at Nov 30 13:00, past the Nov 29 deadline; smaller shapes (2 GPUs, 80 GB, 12 h) estimate the same. `gpu` refuses SFT's 450G (QOSMaxMemoryPerUser). The human decides whether SFT and OPD may use other partitions or a smaller footprint.
+- **SFT and OPD start late (Nov 25 17:00):** Slurm estimates, from our priority, put SFT (4×48 GB) at Nov 29–30 and OPD (8 GPUs) at Nov 30, past the Nov 29 deadline. `gpu` is full until January and caps us at 420G; smaller shapes estimate the same. The human allowed other partitions at a modest priority cost (Nov 25): SFT was resubmitted on `gpu_quad,gpu_requeue` without a dependency to gain age priority (60783661; 60576892 cancelled); OPD's 5 days are refused on `gpu_quad`. More priority is the human's lever.
 
 - **Nov 29 (asked 09:17 Nov 24; the human answered 10:30 that the teacher rollouts come first, see Human decisions):** at the current pace OPD cannot finish before Nov 29. Goal and libero_10 teacher episodes take about an hour each at xhigh, and many end in failure, so tasks run to the 50-trial cap: goal 5–9 alone needs about 130 more trials, about 54 h at 2.4 an hour. Libero_10's jobs are estimated to start Nov 27 08:50 – Nov 28 19:40 (10:17). Object will be done today. The levers are the human's:
   - SFT starts at a cutoff with whatever has been kept, instead of waiting for every suite.

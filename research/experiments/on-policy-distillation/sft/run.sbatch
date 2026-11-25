@@ -1,7 +1,8 @@
 #!/bin/bash
-# SFT of one student (STUDENT=Qwen3.5-9B | Qwen3.5-4B) on the teacher's episodes: up to 25 per task from the four
-# suites' collection runs (opd.select_episodes, seed 0; the first job to start draws the set), with configs/step/sft.yaml's
-# settings (lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs), each episode split across the 4 GPUs, the update on the CPU.
+# SFT of one student (STUDENT=Qwen3.5-9B | Qwen3.5-4B) on the teacher's episodes: up to 25 per task, over every
+# cluster's episodes on the Hub dataset when the job starts (sft/build_set.sh, seed 0; the first job to start draws the
+# set), with configs/step/sft.yaml's settings (lr 1e-5 cosine, 5% warmup, batch 32, 3 epochs), each episode split
+# across the 4 GPUs, the update on the CPU.
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5
 #SBATCH --requeue
 #SBATCH --gres=gpu:4,vram:48G  # L40S, A6000 or A100
@@ -27,10 +28,7 @@ if [ ! -d "$CODE" ]; then
 fi
 SET=$COLLECT/sft-set
 if [ ! -d "$SET" ]; then
-  # every run of the four suites: one per attempt of a requeued collection job
-  mapfile -t RUNS < <(find "$COLLECT"/libero_{goal,spatial,object,10} -type d -name val_dumps -printf '%h\n' | sort)
-  PYTHONPATH=$CODE/src "$WORK_DIR/envs/verl/bin/python" -m opd.select_episodes --per-task 25 --seed 0 --out "$SET" \
-    "${RUNS[@]}"
+  bash /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/sft/build_set.sh
 fi
 flock -u 9
 cd "$CODE"

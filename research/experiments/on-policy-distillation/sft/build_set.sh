@@ -1,8 +1,8 @@
 #!/bin/bash
-# The SFT set over every cluster's episodes, built before SFT 60576892 is released (its run.sbatch then finds the set
-# and keeps it): the other clusters' episodes pulled from the Hub dataset into the stage (collect/pull.py), the index
-# rebuilt with ours (collect/hub.py), and up to 25 per task drawn from the stage by main's opd.select_episodes, which
-# reads the Hub layout from 6005c4f on (bf9b274's, which SFT runs, reads only collection runs). Inside a running job:
+# The SFT set over every cluster's episodes, built by sft/run.sbatch when SFT starts (or by hand, inside a job): the
+# other clusters' episodes pulled from the Hub dataset into the stage (collect/pull.py), the index rebuilt with ours
+# (collect/hub.py), and up to 25 per task drawn from the stage by main's opd.select_episodes, which reads the Hub layout
+# from 6005c4f on (bf9b274's, which SFT trains with, reads only collection runs). By hand:
 #   srun --jobid=<job> --overlap -n1 --cpus-per-task=4 bash sft/build_set.sh
 set -euo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
