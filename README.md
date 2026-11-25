@@ -77,8 +77,9 @@ M=$WORK_DIR/models R=$WORK_DIR/runs
 # 1. teacher episodes, at xhigh effort
 MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts/collect.sh
 
-# 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer)
-python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher
+# 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer), from collection runs or
+#    a download of the episodes' Hub dataset (index.jsonl and <suite>/episodes/), or both: an episode counts once
+python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher [<Hub dataset download> ...]
 MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/sft-set RUN=$R/sft-9b bash scripts/sft.sh
 
 # 3. on-policy distillation: here three machines, one per role
