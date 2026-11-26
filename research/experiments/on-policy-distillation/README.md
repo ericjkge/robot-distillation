@@ -51,6 +51,8 @@ The resumed halves run `main` 47200a9 (adds the worker-port fix); spatial 25–4
 
 **Hub sync 04:49 Nov 26:** 1,116 episode runs, 826 successful, on the Hub; 27 of 40 tasks complete. Short: goal 0 0/17, 1 19/34, 2 9/25, 3 0/15, 4 11/18, 5 4/31, 9 9/26; libero_10 3 0/21, 5 0/17, 6 1/15, 7 2/17, 8 0/22, 9 0/12 (kept/trials; goal 5 and 9 ours, the rest the teammate's).
 
+**Hub sync 09:35 Nov 26** (`collect/sync.sh`, run each tick at the human's request): 1,456 episode runs, 840 successful; 38 of 40 tasks complete. Only goal 5 (4/31) and goal 9 (9/29) short, both ours and running on O2.
+
 **Human decisions**
 - Presentation Nov 30 (Nov 26 01:50): teacher rollouts, SFT and OPD as fast as possible. SFT keeps its queue spot and waits until every task is complete on the Hub (the human, Nov 26 04:10, reversing the 18:00 cutoff): the teammate's runs end tonight, goal 5 and 9 run on Modal from late morning.
 - Goal 5 and 9 to the teammate's cluster, proposed Nov 26 01:40 (critical; O2 cannot start them before Nov 29 at our priority, every shape and time limit; Colab refuses GPUs to the account, `AssignFailure 4`): `gcp/goal5-9.json`, 45 untried trials, uploaded as their `runpod` source.
