@@ -7,7 +7,8 @@ here leaves no partial episode that opd.select_episodes would take.
 
 A job named on the first line of <suite dir>/../relay that finds its suite done hands its GPUs over rather than ending:
 it stops its collection run (the per-suite job's process group, as the job itself would) and works through the units
-on the file's second line (collect.sbatch's UNITS) before it exits."""
+on the file's second line (collect.sbatch's UNITS) before it exits. A job named on its third line hands over at once,
+done or not (its run spends GPUs on tasks already done)."""
 
 import argparse
 import json
@@ -74,8 +75,9 @@ def relay(units: str) -> None:
 
 
 relay_file = args.suite_dir.parent / "relay"
-if done and "RELAYED" not in os.environ and relay_file.exists():
-    jobs, units = relay_file.read_text().splitlines()[:2]
-    if os.environ.get("SLURM_JOB_ID") in jobs.split():
+if "RELAYED" not in os.environ and relay_file.exists():
+    jobs, units, now = (relay_file.read_text().splitlines() + [""])[:3]
+    job = os.environ.get("SLURM_JOB_ID")
+    if done and job in jobs.split() or job in now.split():
         relay(units)
 sys.exit(0 if done else 1)
