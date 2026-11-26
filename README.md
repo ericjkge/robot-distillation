@@ -94,7 +94,15 @@ MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> RUN=$R/eval-9b bash script
 
 To evaluate the teacher at another reasoning effort, add the override
 `+data.apply_chat_template_kwargs.reasoning_effort=low`. Evaluation writes per-episode records to
-`$RUN/val_dumps/eval_<step>.jsonl` and the success rates to `eval_<step>_summary.json`.
+`$RUN/val_dumps/eval_<step>.jsonl` and the success rates to `eval_<step>_summary.json`, with 256,000 response
+tokens per episode as in PEAR's evaluation recipes (training uses 160,000). A large set splits across jobs, each
+resuming where it stopped, with `python -m opd.episodes <episode file> <run dir> --shard i/n`. To compare models
+(success rate ± SE, time and reasoning tokens per episode) and plot them:
+
+```bash
+python -m opd.report summary $R/eval-9b --tokenizer $M/Qwen3.5-9B [--vs $R/eval-sft-9b]
+python -m opd.report plot $R/plots $R/eval-9b $R/eval-sft-9b   # needs matplotlib
+```
 
 **Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes for those GPUs. The default, `GPU=generic`,
 runs on any CUDA GPU (`configs/hardware/generic.sh`) without PEAR's custom kernels. To add a profile, add a file to

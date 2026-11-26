@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Step 4: evaluates a model on a benchmark's episode file, by default LIBERO's 2,000 (40 tasks x 50 initial
-# states); EPISODES=<file> evaluates a subset, e.g. ~10 episodes per task of a perturbation.
+# states); EPISODES=<file> evaluates a subset, e.g. a shard (python -m opd.episodes).
 #   MODEL_FILE=configs/models/<model>.sh MODEL=<model dir> RUN=<run dir> [CKPT_STEP=<checkpoint step>] \
 #     [BENCH=libero|libero_plus|libero_pro] bash scripts/run.sh scripts/eval.sh [overrides]
 # The teacher's effort is an override: +data.apply_chat_template_kwargs.reasoning_effort=xhigh (or low).
 source "$(dirname "$0")/common.sh"
+
+MAX_RESPONSE=${MAX_RESPONSE:-256000}  # PEAR's evaluation recipes' (training runs at common.sh's 160,000)
 
 pear_args
 
