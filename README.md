@@ -17,6 +17,8 @@ distillation) avoids the compounding errors of imitating teacher trajectories al
   token for token.
 - **Teacher rollouts:** [eddykang06/qwen3.8-27b-pear-libero-rollouts](https://huggingface.co/datasets/eddykang06/qwen3.8-27b-pear-libero-rollouts), the teacher's
   episodes at xhigh effort (step 1), used for SFT
+- **Models:** the [robot-distillation collection](https://huggingface.co/collections/eddykang06/robot-distillation-6b072adc11798b1c0c17c36c)
+  holds the rollouts and each student as it is trained (`qwen3.5-<9b|4b>-pear-libero-<sft|opd|...>`)
 - **Benchmarks:** LIBERO (2,000 episodes: 4 suites × 10 tasks × 50 initial states), LIBERO-Pro and LIBERO-Plus
 
 ## Pipeline
