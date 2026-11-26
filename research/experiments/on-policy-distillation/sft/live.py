@@ -1,6 +1,6 @@
-"""Publishes every SFT checkpoint to the Hub while SFT trains, so each can be evaluated later: a checkpoint's
+"""Publishes every SFT checkpoint to the Hub while SFT trains, the latest always on the Hub: a checkpoint's
 huggingface/ directory, once it stops changing, is hard-linked aside (the trainer keeps only its latest 2; the link is removed once uploaded) and uploaded
-as branch step-<N> of the model repo, and to main through publish.py (card, collection). Exits once the SFT job has
+over the model repo's main through publish.py (card, collection): the repo holds only the latest checkpoint. Exits once the SFT job has
 left the queue and every checkpoint is published.
     python live.py <ckpt dir> <repo> <collection slug> <sft set dir> <job id>"""
 
@@ -37,17 +37,13 @@ while True:
             continue  # still being written (or already removed)
         (aside / step).mkdir(parents=True, exist_ok=True)
         subprocess.run(["cp", "-al", f"{hf}/.", str(aside / step / "huggingface")], check=True)
-        api.create_repo(repo, private=False, exist_ok=True)
-        branch = f"step-{step.split('_')[-1]}"
-        api.create_branch(repo, branch=branch, exist_ok=True)
-        api.upload_folder(repo_id=repo, folder_path=aside / step / "huggingface", revision=branch,
-                          commit_message=f"SFT checkpoint {step}")
         episodes = str(len(list(sft_set.glob("*.pt"))))
         subprocess.run([sys.executable, str(Path(__file__).parent / "publish.py"), str(aside / step / "huggingface"),
                         repo, collection, episodes], check=True)
+        api.super_squash_history(repo_id=repo, commit_message=f"SFT checkpoint {step}")  # drop earlier checkpoints' history
         (aside / step / ".done").touch()
         subprocess.run(["rm", "-rf", str(aside / step / "huggingface")], check=True)  # on the Hub now; frees scratch
-        print(f"{time.strftime('%H:%M')} {step} -> {repo} (main and branch {branch})", flush=True)
+        print(f"{time.strftime('%H:%M')} {step} -> {repo}", flush=True)
     if not alive:
         break
     time.sleep(int(os.environ.get("POLL", 300)))
