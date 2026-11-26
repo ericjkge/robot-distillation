@@ -20,6 +20,13 @@ EXP=research/experiments/on-policy-distillation
 TEACHER=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only
 mkdir -p "$DRIVE" "$RUN"
 step() { echo "== $(date +%H:%M) $*"; }
+# while a long step runs: every 2 minutes, the time and the last line of its log (the notebook shows it)
+beat() {
+  [ -z "${BEAT:-}" ] || kill "$BEAT" 2> /dev/null || true
+  (while sleep 120; do echo ".. $(date +%H:%M) $(tail -n 1 "$1" 2> /dev/null | tr -d '\r' | cut -c1-160)"; done) &
+  BEAT=$!
+}
+trap '[ -z "${BEAT:-}" ] || kill "$BEAT" 2> /dev/null || true' EXIT
 
 step "code"
 # main with opd.episodes, PEAR (a submodule) and its patched verl checkout, and this direction's episode file and Hub
@@ -42,10 +49,13 @@ if [ ! -f "$WORK_DIR/.ready" ]; then
   if [ -f "$DRIVE/envs.tar" ] && step "restoring PEAR's environments from Drive" && mkdir -p "$WORK_DIR" &&
     tar -xf "$DRIVE/envs.tar" -C "$WORK_DIR"; then
     step "teacher weights (52 GB)"
-    MODEL_FILE=configs/models/teacher.sh bash third_party/pear/scripts/download_model.sh
+    beat "$DRIVE/download.log"
+    MODEL_FILE=configs/models/teacher.sh bash third_party/pear/scripts/download_model.sh > "$DRIVE/download.log" 2>&1 ||
+      { tail -n 30 "$DRIVE/download.log"; exit 1; }
   else
     step "building PEAR's environments and downloading the teacher (1-2 h; full log: $DRIVE/setup.log)"
     rm -rf "$WORK_DIR/envs"
+    beat "$DRIVE/setup.log"
     BENCHES=libero MODEL_FILES=configs/models/teacher.sh bash scripts/setup.sh >> "$DRIVE/setup.log" 2>&1 ||
       { tail -n 30 "$DRIVE/setup.log"; exit 1; }
     step "saving the environments to Drive for later sessions"
@@ -63,13 +73,16 @@ PYTHONPATH=src "$WORK_DIR/envs/verl/bin/python" -m opd.episodes goal9.json "$RUN
 # CPUs hold: Ray reserves 2 for the replica, the queue 3, and each episode's simulator takes 1
 SESSIONS=$(($(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1) > 90000 ? 4 : 3))
 SESSIONS=$((SESSIONS < $(nproc) - 5 ? SESSIONS : $(nproc) - 5))
+[ "$SESSIONS" -ge 1 ] || { echo "Error: $(nproc) CPUs, too few for the simulators" >&2; exit 1; }
 if [ -s "$ATTEMPT/episodes.json" ]; then
+  beat "$ATTEMPT/train.log"
   step "running $(grep -o '"trial_id"' "$ATTEMPT/episodes.json" | wc -l) episodes, $SESSIONS at once (full log: $ATTEMPT/train.log)"
   TP=1 SESSIONS_PER_REPLICA=$SESSIONS LIBERO_SERVERS=$SESSIONS EPISODES=$ATTEMPT/episodes.json MODEL=$TEACHER \
     RUN=$ATTEMPT bash scripts/run.sh scripts/collect.sh transfer_queue.backend.SimpleStorage.num_data_storage_units=2
 fi
 
 step "uploading to the Hub"
+beat /dev/null
 STAGE=/content/stage
 SOURCE=colab-${SHARD%/*}
 rm -rf "$STAGE"
