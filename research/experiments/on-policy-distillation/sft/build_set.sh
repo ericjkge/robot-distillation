@@ -12,12 +12,10 @@ COLLECT=$OUT/runs/collect-bf9b274
 STAGE=$OUT/hub/qwen3.8-27b-pear-libero-rollouts
 CODE=$OUT/code/6005c4f
 
-# wait, GPUs held, until every cluster's rollouts are complete (pull.py fails while an upload is half done), or until
-# the cutoff, after which SFT takes what exists (the human, Nov 26: a presentation on Nov 30)
-CUTOFF=$(date -d "2026-11-26 18:00" +%s)
+# wait, GPUs held, until every cluster's rollouts are complete (pull.py fails while an upload is half done)
 until "$PY" "$HERE/collect/pull.py" "$STAGE" eddykang06/qwen3.8-27b-pear-libero-rollouts &&
   python3 "$HERE/collect/hub.py" "$STAGE" o2 "$COLLECT"/libero_*/attempt-* &&
-  { python3 "$HERE/collect/complete.py" "$STAGE/index.jsonl" || [ "$(date +%s)" -ge "$CUTOFF" ]; }; do
+  python3 "$HERE/collect/complete.py" "$STAGE/index.jsonl"; do
   sleep 600
 done
 [ -d "$CODE" ] || { git clone -q /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation "$CODE"; git -C "$CODE" checkout -q 6005c4f; }
