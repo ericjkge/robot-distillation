@@ -78,11 +78,7 @@ def runs(tmp_path):
 
 def test_episodes_are_grouped_by_task_without_the_failures(runs):
     tasks = episodes_by_task(runs)
-    assert {task: len(paths) for task, paths in tasks.items()} == {
-        ("libero_goal", 0): 40,
-        ("libero_goal", 1): 3,
-        ("libero_10", 0): 10,
-    }
+    assert counts(tasks) == {("libero_goal", 0): 40, ("libero_goal", 1): 3, ("libero_10", 0): 10}
     assert all(task_of(path) == task for task, paths in tasks.items() for path in paths)
 
 
@@ -96,16 +92,6 @@ def test_the_draw_is_fixed_by_its_seed(runs):
     tasks = episodes_by_task(runs)
     assert select(tasks, 25, seed=0) == select(tasks, 25, seed=0)
     assert select(tasks, 25, seed=0) != select(tasks, 25, seed=1)
-
-
-def test_the_set_is_a_directory_the_sft_dataset_reads(runs, tmp_path, monkeypatch):
-    out = tmp_path / "set"
-    monkeypatch.setattr(sys, "argv", ["select_episodes", "--per-task", "25", "--out", str(out), *map(str, runs)])
-    select_episodes.main()
-    assert len(EpisodeDataset(str(out), None, OmegaConf.create({"max_length": 8}))) == 25 + 3 + 10
-    assert json.loads((out / "selection.json").read_text())["kept"]["libero_goal/0"] == 40
-    with pytest.raises(FileExistsError):  # a set is never overwritten
-        select_episodes.main()
 
 
 def test_a_hub_download_gives_its_successes_by_task(tmp_path):
@@ -156,11 +142,17 @@ def test_an_incomplete_download_is_an_error(tmp_path):
         episodes_by_task([hub])
 
 
-def test_a_set_from_a_hub_download_is_a_directory_the_sft_dataset_reads(tmp_path, monkeypatch):
+def test_the_set_is_a_directory_the_sft_dataset_reads(runs, tmp_path, monkeypatch):
     hub = hub_dataset(tmp_path / "hub", "libero_object", kept=[30, 5], failed=1)
     out = tmp_path / "set"
-    monkeypatch.setattr(sys, "argv", ["select_episodes", "--per-task", "25", "--out", str(out), str(hub)])
+    monkeypatch.setattr(sys, "argv", ["select_episodes", "--out", str(out), *map(str, runs), str(hub)])
     select_episodes.main()
-    assert len(EpisodeDataset(str(out), None, OmegaConf.create({"max_length": 8}))) == 25 + 5
-    assert all(link.suffix == ".pt" and link.resolve().parent == hub / "blobs" for link in out.glob("*.pt"))
-    assert json.loads((out / "selection.json").read_text())["kept"] == {"libero_object/0": 30, "libero_object/1": 5}
+    assert len(EpisodeDataset(str(out), None, OmegaConf.create({"max_length": 8}))) == 25 + 3 + 10 + 25 + 5
+    assert all(
+        link.resolve().parent in (runs[0] / "episodes", runs[1] / "episodes", hub / "blobs")
+        for link in out.glob("*.pt")
+    )
+    kept = json.loads((out / "selection.json").read_text())["kept"]
+    assert kept["libero_goal/0"] == 40 and kept["libero_object/1"] == 5
+    with pytest.raises(FileExistsError):  # a set is never overwritten
+        select_episodes.main()

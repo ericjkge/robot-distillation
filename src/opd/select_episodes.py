@@ -15,18 +15,18 @@ from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
+from opd.episodes import recorded
+
 Task = tuple[str, int]  # (suite, task id)
 
 
 def collection_run_episodes(run: Path) -> Iterator[tuple[Task, Path]]:
     """The kept episodes of a collection run, with their tasks."""
-    for dump in sorted((run / "val_dumps").glob("*.jsonl")):
-        for line in dump.read_text().splitlines():
-            record = json.loads(line)
-            path = run / "episodes" / f"{record['uid']}.pt"
-            if path.exists():  # opd.collect saved it: the episode succeeded
-                env = record["extra_fields"]["episode"]["env"]
-                yield (env["suite"], int(env["task_id"])), path
+    for record in recorded(run):
+        path = run / "episodes" / f"{record['uid']}.pt"
+        if path.exists():  # opd.collect saved it: the episode succeeded
+            env = record["extra_fields"]["episode"]["env"]
+            yield (env["suite"], int(env["task_id"])), path
 
 
 def hub_dataset_episodes(dataset: Path) -> Iterator[tuple[Task, Path]]:
