@@ -6,6 +6,7 @@
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a requeued job resumes
 #SBATCH --requeue
 #SBATCH --gres=gpu:1,vram:45G
+#SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16 or too small (60796702-03 failed on RTX 8000)
 #SBATCH --time=3-00:00:00
 #SBATCH --cpus-per-task=10
 # host memory unmeasured: the 27B teacher's collection peaked at 75 GB; resize to 1.5x the first job's MaxRSS

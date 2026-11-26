@@ -9,6 +9,7 @@
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5; a requeued job resumes
 #SBATCH --requeue
 #SBATCH --gres=gpu:2,vram:48G
+#SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16 or too small (60796702-03 failed on RTX 8000)
 #SBATCH --time=2-00:00:00
 #SBATCH --cpus-per-task=11  # the gpu partition's QOS allows 34 CPUs per user: three of these jobs
 # host memory: libero_goal peaked at 75 GB (MaxRSS)
