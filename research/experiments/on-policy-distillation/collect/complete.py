@@ -1,14 +1,18 @@
 """Whether the teacher rollouts are complete: every task of the four suites has 25 successful episodes or has run all
 50 trials, over every cluster's episode runs in a Hub stage's index.jsonl (collect/hub.py). Exits 1 and names the
-tasks still short otherwise.
+tasks still short otherwise. A file sft-stage1 next to the index counts as complete: SFT's first stage starts on what
+is there (sft/staged.sh).
     python complete.py <stage>/index.jsonl"""
 
 import json
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 SUITES = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
 
+if (Path(sys.argv[1]).parent / "sft-stage1").exists():
+    sys.exit(0)
 kept, trials = defaultdict(int), defaultdict(set)
 for line in open(sys.argv[1]):
     row = json.loads(line)

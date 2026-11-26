@@ -2,7 +2,7 @@
 huggingface/ directory, once it stops changing, is hard-linked aside (the trainer keeps only its latest 2; the link is removed once uploaded) and uploaded
 over the model repo's main through publish.py (card, collection): the repo holds only the latest checkpoint. Exits once the SFT job has
 left the queue and every checkpoint is published.
-    python live.py <ckpt dir> <repo> <collection slug> <sft set dir> <job id>"""
+    python live.py <ckpt dir>[,<ckpt dir> ...] <repo> <collection slug> <sft set dir> <job id>"""
 
 import os
 import subprocess
@@ -12,8 +12,7 @@ from pathlib import Path
 
 from huggingface_hub import HfApi
 
-ckpt, repo, collection, sft_set, job = Path(sys.argv[1]), sys.argv[2], sys.argv[3], Path(sys.argv[4]), sys.argv[5]
-aside = ckpt.parent / "published"
+ckpts, repo, collection, sft_set, job = [Path(c) for c in sys.argv[1].split(",")], sys.argv[2], sys.argv[3], Path(sys.argv[4]), sys.argv[5]
 api = HfApi()
 
 
@@ -27,7 +26,8 @@ def running() -> bool:
 
 while True:
     alive = running()
-    for hf in sorted(ckpt.glob("global_step_*/huggingface"), key=lambda p: int(p.parent.name.split("_")[-1])):
+    for ckpt, hf in [(c, h) for c in ckpts for h in sorted(c.glob("global_step_*/huggingface"), key=lambda p: int(p.parent.name.split("_")[-1]))]:
+        aside = ckpt.parent / "published"
         step = hf.parent.name
         if (aside / step / ".done").exists() or not (hf / "config.json").exists():
             continue
