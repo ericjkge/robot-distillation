@@ -17,7 +17,9 @@ REPO=eddykang06/qwen3.8-27b-pear-libero-rollouts
 BRANCH=claude/on-policy-distillation
 EXP=research/experiments/on-policy-distillation
 mkdir -p "$DRIVE" "$RUN"
+step() { echo "== $(date +%H:%M) $*"; }
 
+step "code"
 # the code: main with opd.episodes, and this direction's episode file and Hub layout
 if [ ! -d "$CODE" ]; then
   git clone -q https://github.com/ericjkge/robot-distillation "$CODE"
@@ -30,12 +32,15 @@ cd "$CODE"
 # PEAR's environments and LIBERO: built once (1-2 h), kept on Drive as a tarball; the teacher from the Hub each session
 if [ ! -d "$WORK_DIR/envs/verl" ]; then
   if [ -f "$DRIVE/envs.tar" ]; then
+    step "restoring PEAR's environments from Drive"
     mkdir -p "$WORK_DIR" && tar -xf "$DRIVE/envs.tar" -C "$WORK_DIR"
   else
+    step "building PEAR's environments (1-2 h; log: $DRIVE/setup.log)"
     BENCHES=libero MODEL_FILES=/dev/null bash scripts/setup.sh 2>&1 | tee -a "$DRIVE/setup.log"
     tar -cf "$DRIVE/envs.tar" -C "$WORK_DIR" envs
   fi
 fi
+step "teacher weights"
 [ -d "$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only" ] ||
   MODEL_FILE=configs/models/teacher.sh bash third_party/pear/scripts/download_model.sh
 
@@ -46,11 +51,13 @@ PYTHONPATH=src "$WORK_DIR/envs/verl/bin/python" -m opd.episodes goal9.json "$RUN
 # episodes at once: what the KV cache beside the 54 GB of weights holds (G4's 96 GB: 4; H100's 80 GB: 3)
 SESSIONS=$(($(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1) > 90000 ? 4 : 3))
 if [ -s "$ATTEMPT/episodes.json" ]; then
+  step "running $(grep -o '"trial_id"' "$ATTEMPT/episodes.json" | wc -l) episodes, $SESSIONS at once (log: $ATTEMPT/train.log)"
   TP=1 SESSIONS_PER_REPLICA=$SESSIONS LIBERO_SERVERS=$SESSIONS EPISODES=$ATTEMPT/episodes.json \
     MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$ATTEMPT bash scripts/run.sh scripts/collect.sh \
     transfer_queue.backend.SimpleStorage.num_data_storage_units=2
 fi
 
+step "uploading to the Hub"
 STAGE=/content/stage
 SOURCE=colab-${SHARD%/*}
 python3 hub.py "$STAGE" "$SOURCE" "$RUN"/attempt-*
