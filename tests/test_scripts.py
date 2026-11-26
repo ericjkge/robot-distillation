@@ -90,6 +90,16 @@ def test_collect_runs_the_teacher_at_xhigh_unless_overridden(run_step):
     assert value(args, "data.apply_chat_template_kwargs.reasoning_effort") == "low"
 
 
+def test_collect_swaps_in_the_first_of_k_loop_only_with_first_k(run_step):
+    _, args = run_step("collect.sh", **STEPS["collect.sh"])
+    assert value(args, "actor_rollout_ref.rollout.agent.agent_loop_config_path").endswith("pear/agent_loop/config.yaml")
+    assert "ray_kwargs.ray_init.runtime_env.env_vars.OPD_FIRST_K" not in map(key, args)
+    _, args = run_step("collect.sh", FIRST_K=2, **STEPS["collect.sh"])
+    path = Path(value(args, "actor_rollout_ref.rollout.agent.agent_loop_config_path"))
+    assert path == ROOT / "configs" / "agent_loop" / "first_k.yaml" and path.is_file()
+    assert value(args, "ray_kwargs.ray_init.runtime_env.env_vars.OPD_FIRST_K") == "'2'"
+
+
 def test_user_overrides_replace_the_hardware_profile(run_step):
     _, args = run_step("eval.sh", ["actor_rollout_ref.rollout.kernels=custom"], **STEPS["eval.sh"])
     assert value(args, "actor_rollout_ref.rollout.kernels") == "custom"

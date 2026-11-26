@@ -78,6 +78,8 @@ M=$WORK_DIR/models R=$WORK_DIR/runs
 
 # 1. teacher episodes, at xhigh effort
 MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts/collect.sh
+#    concise episodes: each turn samples twice and keeps the first sample to finish with a usable action (opd.first_k)
+FIRST_K=2 MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher-first2 bash scripts/run.sh scripts/collect.sh
 
 # 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer), from collection runs or
 #    a download of the episodes' Hub dataset (index.jsonl and <suite>/episodes/), or both: an episode counts once

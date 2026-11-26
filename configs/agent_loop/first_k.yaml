@@ -1,0 +1,4 @@
+# actor_rollout_ref.rollout.agent.agent_loop_config_path for scripts/collect.sh with FIRST_K > 1: PEAR's entry
+# (third_party/pear/pear/agent_loop/config.yaml) with the first-of-k loop (opd.first_k_loop), under PEAR's name.
+- name: pear_agent
+  _target_: opd.first_k_loop.FirstOfKAgentLoop
