@@ -24,7 +24,7 @@ tags: [robotics, libero, distillation, sft]
 the loss on every generated token (reasoning and actions), in the same multi-round context as at inference. lr 1e-5
 cosine, 5% warmup, batch 32, 3 epochs. It uses the teacher's chat template, which sets the reasoning effort in the
 system prompt. The starting point of on-policy distillation in
-[robot-distillation](https://github.com/ericjkge/robot-distillation); checkpoint `{checkpoint.parent.name}`.
+[robot-distillation](https://github.com/ericjkge/robot-distillation); checkpoint `{checkpoint.parent.name}` (every checkpoint: branches `step-<N>`).
 """
 api.upload_folder(repo_id=repo, folder_path=checkpoint, commit_message=f"SFT checkpoint {checkpoint.parent.name}")
 api.upload_file(repo_id=repo, path_or_fileobj=card.encode(), path_in_repo="README.md")
