@@ -3,9 +3,11 @@
 # The running SFT job's code clone ($OUT/code/bf9b274) has scripts/sft.sh replaced by a call to this script, its
 # original kept as scripts/sft-once.sh; sft/run.sbatch calls it from the clone with MODEL, EPISODES_DIR, RUN, NGPUS.
 #   stage 1: the set drawn when SFT started (whatever was on the Hub), 2 epochs, in $RUN
-#   stage 2: once the rollouts are complete (collect/complete.py) and not held (touch $STAGE/stage2.hold to hold for
-#            late uploads), the set drawn again over everything on the Hub, 1 epoch from stage 1's last checkpoint, in
-#            $RUN-final. 3 epochs in all, the late episodes in the last.
+#   stage 2: once the rollouts are complete (collect/complete.py) and not held ($STAGE/stage2.hold), 1 epoch from stage
+#            1's last checkpoint, in $RUN-final, over sft/final_set.py's set: stage 1's episodes once and each task
+#            topped up to 25 with the late episodes, each 3 times, so every episode gets 3 epochs and the late ones come
+#            last. For the running job (60783661, which reads the earlier version of this script) the set is built by
+#            sft/stage2.sh on the agent host, which then lifts the hold.
 # A requeued job resumes the stage it was in (verl resumes from the latest checkpoint of its run directory).
 set -euo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
@@ -31,7 +33,8 @@ FIRST=$(ls -d "$RUN"/ckpt/global_step_*/huggingface | sort -V | tail -1)
 FINAL=$COLLECT/sft-set-final
 if [ ! -d "$FINAL" ]; then
   until ready; do sleep 600; done
-  PYTHONPATH=$OUT/code/6005c4f/src "$PY" -m opd.select_episodes --per-task 25 --seed 0 --out "$FINAL.part" "$STAGE"
+  rm -rf "$FINAL.part"
+  python3 "$HERE/sft/final_set.py" "$STAGE" "$EPISODES_DIR" "$FINAL.part"
   mv "$FINAL.part" "$FINAL"
 fi
 EPOCHS=$(cat "$RUN/stage2.epochs" 2> /dev/null || echo 1)  # changeable while stage 1 runs (this script is then open)
