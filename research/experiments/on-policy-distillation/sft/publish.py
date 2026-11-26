@@ -1,4 +1,4 @@
-"""Upload an SFT checkpoint (its huggingface/ directory) to the Hub as a private model, with a short card, and add it to
+"""Upload an SFT checkpoint (its huggingface/ directory) to the Hub as a public model, with a short card, and add it to
 the project's collection next to the teacher rollouts.
     python publish.py <checkpoint>/huggingface <repo> <collection slug> <episodes in the SFT set>"""
 
@@ -9,7 +9,7 @@ from huggingface_hub import HfApi
 
 checkpoint, repo, collection, episodes = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 api = HfApi()
-api.create_repo(repo, private=True, exist_ok=True)
+api.create_repo(repo, private=False, exist_ok=True)
 card = f"""---
 base_model: Qwen/Qwen3.5-9B
 datasets: [eddykang06/qwen3.8-27b-pear-libero-rollouts]

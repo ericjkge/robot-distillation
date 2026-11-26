@@ -1,5 +1,5 @@
 #!/bin/bash
-# After SFT (afterok), upload its last checkpoint to the Hub as a private model in the robot-distillation collection
+# After SFT (afterok), upload its last checkpoint to the Hub as a public model in the robot-distillation collection
 # (sft/publish.py).
 #SBATCH --partition=short
 #SBATCH --time=04:00:00
