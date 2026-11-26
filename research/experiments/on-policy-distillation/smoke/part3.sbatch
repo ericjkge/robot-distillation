@@ -6,7 +6,8 @@
 # PEAR's optimizer_offload, Adam's step brought it onto the trainer GPUs and ran out of memory (60471092). PEAR's
 # optimizer_offload and optimizer_offload_step go off with it: verl allows them only without offload_policy.
 #SBATCH --partition=gpu_requeue  # preemptible and billed at 0.1 per GPU instead of 5: a short, restartable job
-#SBATCH --gres=gpu:l40s:4
+#SBATCH --gres=gpu:4,vram:48G
+#SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16
 #SBATCH --time=01:15:00
 #SBATCH --cpus-per-task=16
 # host memory: 96G was killed in the first update; the 4B SFT pilot with its state on the CPU peaked at 147 GB
