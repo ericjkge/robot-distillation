@@ -1,7 +1,7 @@
 #!/bin/bash
 # Goal task 9's 24 untried trials (gcp/goal9.json) on one Colab GPU of 80 GB (H100 or A100), run as the O2 collection
 # runs them (main's scripts/collect.sh: the teacher at xhigh, 160,000 response tokens), one TP1 replica with 3 episodes
-# at once. Everything that must outlive the session (PEAR's environments as a tarball, the run's records and episodes)
+# at once (4 on G4's 96 GB). Everything that must outlive the session (PEAR's environments as a tarball, the run's records and episodes)
 # is on Google Drive, so rerunning after a disconnect resumes: only the trials without a record run again. SHARD=i/n
 # splits the trials across notebooks. At the end the records and successful episodes go to the Hub dataset as source
 # colab-<i> (collect/hub.py's layout), which O2's SFT set pulls (collect/pull.py).
@@ -43,8 +43,10 @@ fi
 ATTEMPT=$RUN/attempt-$(date +%s)
 mkdir -p "$ATTEMPT"
 PYTHONPATH=src "$WORK_DIR/envs/verl/bin/python" -m opd.episodes goal9.json "$RUN" --shard "$SHARD" > "$ATTEMPT/episodes.json"
+# episodes at once: what the KV cache beside the 54 GB of weights holds (G4's 96 GB: 4; H100's 80 GB: 3)
+SESSIONS=$(($(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1) > 90000 ? 4 : 3))
 if [ -s "$ATTEMPT/episodes.json" ]; then
-  TP=1 SESSIONS_PER_REPLICA=3 LIBERO_SERVERS=3 EPISODES=$ATTEMPT/episodes.json \
+  TP=1 SESSIONS_PER_REPLICA=$SESSIONS LIBERO_SERVERS=$SESSIONS EPISODES=$ATTEMPT/episodes.json \
     MODEL=$WORK_DIR/models/Qwen3.8-27B-PEAR-LIBERO_only RUN=$ATTEMPT bash scripts/run.sh scripts/collect.sh \
     transfer_queue.backend.SimpleStorage.num_data_storage_units=2
 fi
