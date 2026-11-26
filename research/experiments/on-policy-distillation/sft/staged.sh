@@ -6,8 +6,7 @@
 #   stage 2: once the rollouts are complete (collect/complete.py) and not held ($STAGE/stage2.hold), 1 epoch from stage
 #            1's last checkpoint, in $RUN-final, over sft/final_set.py's set: stage 1's episodes once and each task
 #            topped up to 25 with the late episodes, each 3 times, so every episode gets 3 epochs and the late ones come
-#            last. For the running job (60783661, which reads the earlier version of this script) the set is built by
-#            sft/stage2.sh on the agent host, which then lifts the hold.
+#            last.
 # A requeued job resumes the stage it was in (verl resumes from the latest checkpoint of its run directory).
 set -euo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
