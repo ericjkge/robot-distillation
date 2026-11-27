@@ -26,6 +26,19 @@ The 4B student is not run (human, Nov 23).
 
 *Updated 2026-11-23 23:45. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
+**OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Batch | 32 episodes per update (one mini-batch) | the human, Nov 27: OPD scores every token, so small batches work (Lu et al., 2025); about 2x the updates of 64 by the deadline |
+| Updates | open-ended (`STEPS=1000` cap), stopped by hand; checkpoint every update, keep 2 | the human: no hard stop yet |
+| Off-policy | `max_off_policy_threshold=1`: only the current policy's episodes | Algorithm 1 |
+| Validation | 100 LIBERO-Goal episodes after every 10th update, none before the first | Algorithm 1 (N = 10) |
+| Loss | k1 reverse KL as a per-token policy gradient, no task reward; lr 1e-6 (PEAR's) | Algorithm 1 |
+| Rollout | xhigh effort, temperature 1.0, top-p 1.0, n = 1, 4,096 + 160,000 tokens; 9B replicas TP 1, memory 0.85 | PEAR's training settings |
+| Trainer | 4 GPUs, Ulysses SP 4 (41,024 tokens per GPU), fused head, FSDP2 with `offload_policy`, verl patch 0045 | fits 48 GB; 0045: the 9B's untied lm_head in the root unit |
+| Teacher | TP 2, `max_model_len` 164,097, memory 0.9, prefill chunks 2,048 | fits 2 x 48 GB (check 60999063) |
+
 **Now running or queued**
 
 | Step | Jobs | State |
