@@ -14,7 +14,7 @@ hostname
 ip -o -4 addr show | awk '{print $2, $4}'
 # NCCL's sockets off the BMC (idrac, 169.254.x) and loopback interfaces: the first try picked mismatched interfaces
 # ("socketFinalizeAccept ... wrong type"); Ray's workers inherit these from ray start
-export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-^lo,idrac} NCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT,NET
+export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-^lo,idrac} NCCL_DEBUG=WARN
 RAY_TMPDIR=/var/tmp/$USER/ray-crossnode timeout 3000 "$OUT/work/envs/verl/bin/python" \
   /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/checks/crossnode.py \
   "$ROLE" "$OUT/checks/crossnode/address-$TAG" 2>&1 | grep -v Warning | grep -v "NCCL INFO.*\(Channel\|Connected\|ring\|Trees\|P2P\)"

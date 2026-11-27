@@ -39,11 +39,11 @@ class Rank:
     def host(self):
         return socket.gethostname(), socket.gethostbyname(socket.gethostname())
 
-    def allreduce(self, rank, master):
+    def allreduce(self, rank, master, port):
         import torch
         import torch.distributed as dist
 
-        dist.init_process_group("nccl", init_method=f"tcp://{master}:29511", rank=rank, world_size=2)
+        dist.init_process_group("nccl", init_method=f"tcp://{master}:{port}", rank=rank, world_size=2)
         x = torch.full((256 * 1024 * 1024,), float(rank + 1), device="cuda")  # 1 GiB, as a weight sync's buckets
         torch.cuda.synchronize()
         start = time.time()
@@ -52,8 +52,18 @@ class Rank:
         return x[0].item(), round(1.0 / (time.time() - start), 2)
 
 
-ranks = [Rank.options(scheduling_strategy=ray.util.scheduling_strategies.NodeAffinitySchedulingStrategy(n["NodeID"], soft=False)).remote()
-         for n in ray.nodes() if n["Alive"]]
-hosts = ray.get([r.host.remote() for r in ranks])
-print("actors on:", hosts, flush=True)
-print("all_reduce (sum 3.0 expected, GiB/s):", ray.get([r.allreduce.remote(i, hosts[0][1]) for i, r in enumerate(ranks)]), flush=True)
+# NCCL settings to try, each with its own actors and port: TCP sockets, and RoCE with the RoCE v2 GID index
+VARIANTS = [{"NCCL_IB_DISABLE": "1"}, {"NCCL_IB_GID_INDEX": "3"}, {}]
+nodes = [n for n in ray.nodes() if n["Alive"]]
+for i, env in enumerate(VARIANTS):
+    ranks = [Rank.options(runtime_env={"env_vars": env},
+                          scheduling_strategy=ray.util.scheduling_strategies.NodeAffinitySchedulingStrategy(n["NodeID"], soft=False)).remote()
+             for n in nodes]
+    hosts = ray.get([r.host.remote() for r in ranks])
+    try:
+        out = ray.get([r.allreduce.remote(k, hosts[0][1], 29511 + i) for k, r in enumerate(ranks)], timeout=600)
+        print(f"{env or 'default'}: all_reduce on {[h[0] for h in hosts]} (sum 3.0 expected, GiB/s): {out}", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"{env or 'default'}: FAILS {type(e).__name__}: {str(e).splitlines()[-1][:200]}", flush=True)
+    for r in ranks:
+        ray.kill(r)
