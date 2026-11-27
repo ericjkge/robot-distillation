@@ -70,6 +70,9 @@ def main(config_path: str, episode_paths: list[str]) -> None:
         teacher_ids, logprobs = loop.run_until_complete(score())
         took = time.time() - start
         lp = logprobs.float().flatten()
+        # kept beside the config for the positions that differ: <config stem>-<episode>.pt
+        torch.save({"ids": torch.tensor(ids), "teacher_ids": teacher_ids, "logprobs": logprobs, "loss_mask": episode["loss_mask"]},
+                   config_path.rsplit(".", 1)[0] + "-" + path.rsplit("/", 1)[-1])
         print(
             f"scored {len(ids)} tokens ({len(images)} images) in {took:.0f} s ({len(ids) / took:.0f} tokens/s): "
             f"finite {bool(torch.isfinite(lp[1:]).all())}, mean over generated tokens "
