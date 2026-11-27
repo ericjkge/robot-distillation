@@ -16,4 +16,9 @@ HARDWARE_ARGS=(
   actor_rollout_ref.actor.fsdp_config.fsdp_size=-1
   actor_rollout_ref.actor.ppo_max_token_len_per_gpu="$TOK_PER_GPU"
   actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu="$TOK_PER_GPU"
+  # the actor's fp32 state on the CPU (FSDP2's offload_policy), as SFT keeps it: PEAR's optimizer_offload brings it onto
+  # the GPUs for Adam's step, which a 48 GB GPU cannot hold; verl allows optimizer_offload only without offload_policy
+  actor_rollout_ref.actor.fsdp_config.offload_policy=true
+  actor_rollout_ref.actor.fsdp_config.optimizer_offload=false
+  actor_rollout_ref.actor.fsdp_config.optimizer_offload_step=false
 )

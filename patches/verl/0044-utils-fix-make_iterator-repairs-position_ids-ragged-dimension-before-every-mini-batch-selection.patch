@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pear <pear@localhost>
+Date: Mon, 17 Sep 2001 00:00:00 +0000
+Subject: [PATCH] [utils] fix: make_iterator repairs position_ids' ragged
+ dimension before every mini-batch selection
+
+---
+ verl/utils/tensordict_utils.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/verl/utils/tensordict_utils.py b/verl/utils/tensordict_utils.py
+index 91d82b15ffd7990c5e50107f3882d83f1558c604..0d3f18460324a23e69a10fa4fc8b99beaaa670a1 100644
+--- a/verl/utils/tensordict_utils.py
++++ b/verl/utils/tensordict_utils.py
+@@ -607,6 +607,8 @@ def make_iterator(tensordict: TensorDict, mini_batch_size, epochs, seed=None, da
+     def get_data():
+         for _ in range(epochs):
+             for idx in train_dataloader:
++                # the selection reads position_ids' ragged dimension, which a transfer through PEAR's queue resets
++                maybe_fix_3d_position_ids(tensordict)
+                 yield index_select_tensor_dict(tensordict, idx)
+ 
+     return iter(get_data())

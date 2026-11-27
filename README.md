@@ -41,6 +41,7 @@ configs/
   models/       one file per model: its Hub repository and pinned revision
   hardware/     GPU profiles beyond PEAR's own H100 and GB300 recipes
   step/         each step's settings, an overlay on the PEAR or verl config it runs on
+patches/verl/   fixes to verl applied on top of PEAR's own (scripts/verl.sh; setup applies them)
 scripts/        setup, one script per step, and the Ray launcher (run.sh, ray_node.sh)
 src/opd/        entry points, teacher-episode collection and the SFT dataset
 third_party/    PEAR, pinned as a submodule

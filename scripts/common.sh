@@ -118,7 +118,7 @@ pear_exec() {
   source "$PEAR/scripts/gpu_process_variables.sh" "$VERL_ENV"
   export RAY_ADDRESS=${RAY_ADDRESS:-auto} PEAR_LOG_DIR=$RUN/sim WANDB_DIR=$RUN
   export VERL_USE_EXTERNAL_MODULES=$EXTERNAL_MODULES PYTHONPATH=$PYTHON_PATH
-  # refuses a verl checkout other than PEAR's pinned commit and patches
-  bash "$PEAR/3rdparty/verl/scripts/checkout_verl.sh" --check | tee -a "$RUN/train.log"
+  # refuses a verl checkout other than PEAR's pinned commit and patches with this repository's (patches/verl)
+  bash "$ROOT/scripts/verl.sh" --check | tee -a "$RUN/train.log"
   python -m "opd.$step" --config-dir "$ROOT/configs" "${args[@]}" 2>&1 | tee -a "$RUN/train.log"
 }

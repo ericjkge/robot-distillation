@@ -19,8 +19,10 @@ read -r -a MODEL_LIST <<< "${MODEL_FILES:-$(echo "$ROOT"/configs/models/*.sh)}"
 git -C "$ROOT" submodule update --init
 # PEAR's targets, each an environment of WORK_DIR/envs (the simulators bring Mesa, LIBERO-Plus ImageMagick)
 for target in "${BENCH_LIST[@]}" numactl verl; do
-  bash "$PEAR/scripts/install.sh" "$target"
+  # PEAR's own check of its verl checkout sees this repository's patches as a change; scripts/verl.sh checks both
+  VERL_CHANGE_IN_PROGRESS=1 bash "$PEAR/scripts/install.sh" "$target"
 done
+bash "$ROOT/scripts/verl.sh"  # this repository's verl patches (patches/verl) on PEAR's checkout
 for model_file in "${MODEL_LIST[@]}"; do
   MODEL_FILE=$model_file bash "$PEAR/scripts/download_model.sh"
 done
