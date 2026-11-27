@@ -97,6 +97,7 @@ MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> RUN=$R/eval-9b bash script
 
 Evaluation writes per-episode records to `$RUN/val_dumps/eval_<step>.jsonl` and success rates to
 `eval_<step>_summary.json`, with 256,000 response tokens per episode as in PEAR's evaluation (training uses 160,000).
+`tests/test_eval_protocol.py` checks that it composes the config of PEAR's own recipe (`examples/eval/eval_libero.sh`) key for key, apart from the hardware profile's kernels and caches, so the numbers compare with the paper's.
 
 - **Other reasoning effort:** add `+data.apply_chat_template_kwargs.reasoning_effort=low`.
 - **Large sets:** split across resumable jobs with `python -m opd.episodes <episode file> <run dir> --shard i/n`.
