@@ -19,6 +19,8 @@ export WORK_DIR=$OUT/work VERL_CHANGE_IN_PROGRESS=1 LOCAL_DIR=/var/tmp/$USER/pea
 source "$PEAR/scripts/gpu_process_variables.sh" "$WORK_DIR/envs/verl"
 export PYTHONPATH=$PEAR/pear/utils/sitecustomize:$PEAR:$PEAR/3rdparty/verl/src:$CODE/src
 export VERL_USE_EXTERNAL_MODULES=pear.rollout.server,pear.models.qwen3_5.tool_parser
+# as scripts/common.sh does: Slurm sets ROCR_VISIBLE_DEVICES beside CUDA_VISIBLE_DEVICES, which verl's workers refuse
+if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then unset ROCR_VISIBLE_DEVICES; fi
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 cd "$CODE"
 for variant in ${VARIANTS:-as_is mem85 mem85_chunk2048 mem85_chunk2048_len164k}; do
