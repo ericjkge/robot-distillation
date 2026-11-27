@@ -19,6 +19,6 @@ Calling the fix right before each selection solved it for us:
                  yield index_select_tensor_dict(tensordict, idx)
 ```
 
-With that change the run finishes both updates and the exported model evaluates fine. Here it is as a patch in your format, in case it's useful: https://github.com/ericjkge/robot-distillation/blob/main/patches/verl/0044-utils-fix-make_iterator-repairs-position_ids-ragged-dimension-before-every-mini-batch-selection.patch
+With that change the run gets through both updates, and exporting and evaluating the result work too. Here it is as a patch in your format, in case it's useful: https://github.com/ericjkge/robot-distillation/blob/main/patches/verl/0044-utils-fix-make_iterator-repairs-position_ids-ragged-dimension-before-every-mini-batch-selection.patch
 
 Setup: PEAR at faff474 (verl 8e03c039 + your 43 patches), `pear.main_training` with distillation, `trainer_mode: separate_async`, Qwen3.5-4B as both student and teacher, `train_batch_size=2`, `ppo_mini_batch_size=2`, on 4x L40S (FlashAttention-2 instead of your kernels, `fsdp_config.offload_policy=true`).
