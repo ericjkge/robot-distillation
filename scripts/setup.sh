@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # One-time install under WORK_DIR: PEAR's training environment (verl) and the simulators of BENCHES, then the models of
 # MODEL_FILES at their pinned revisions. PEAR builds its CUDA extensions for this machine's GPU or, on a machine without
-# one, for CUDA_ARCH, which it then needs (e.g. "8.0;8.9" for A100 and L40S; MAX_JOBS bounds the compilers' memory).
+# one, for CUDA_ARCH, which it then needs (a single compute capability; MAX_JOBS bounds the compilers' memory).
+# On a cluster that mixes GPU types, set CUDA_ARCH to the lowest one's: a build for an L40S (8.9) fails on an A6000 or
+# A100 (cudaErrorNoKernelImageForDevice), while 8.0's kernels run on every 8.x GPU (A100, A6000, A40, L40S). An H100
+# (9.0) needs its own build, which adds flash-attn 3.
 # On a GPU machine it finishes with PEAR's checks of the training environment and of a LIBERO simulator.
 #   WORK_DIR=<a directory every machine sees> [CUDA_ARCH=...] [BENCHES="libero libero_plus libero_pro"] \
 #     [MODEL_FILES="configs/models/teacher.sh ..."] bash scripts/setup.sh

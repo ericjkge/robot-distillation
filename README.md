@@ -52,6 +52,7 @@ third_party/    PEAR, pinned as a submodule
 git clone --recursive https://github.com/ericjkge/robot-distillation.git && cd robot-distillation
 export WORK_DIR=/shared/path       # a directory every machine sees: environments, models and runs
 bash scripts/setup.sh              # PEAR's environments (verl, LIBERO, LIBERO-Pro, LIBERO-Plus) and the three models
+# on a cluster with several 8.x GPU types (A100, A6000, A40, L40S): CUDA_ARCH=8.0 bash scripts/setup.sh
 ```
 
 ## Running
