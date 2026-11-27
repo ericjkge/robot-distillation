@@ -7,6 +7,7 @@
 #            1's last checkpoint, in $RUN-final, over sft/final_set.py's set: stage 1's episodes once and each task
 #            topped up to 25 with the late episodes, each 3 times, so every episode gets 3 epochs and the late ones come
 #            last.
+# Then $RUN/sft.final names stage 2's last checkpoint, the one SFT checkpoint, and stage 1's are removed.
 # A requeued job resumes the stage it was in (verl resumes from the latest checkpoint of its run directory).
 set -euo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
@@ -39,3 +40,8 @@ fi
 EPOCHS=$(cat "$RUN/stage2.epochs" 2> /dev/null || echo 1)  # changeable while stage 1 runs (this script is then open)
 echo "== $(date +%H:%M) stage 2: $(ls "$FINAL"/*.pt | wc -l) episodes, $EPOCHS epochs, from $FIRST"
 MODEL=$FIRST EPISODES_DIR=$FINAL RUN=$RUN-final bash "$ONCE" "$@" trainer.total_epochs="$EPOCHS"
+# one SFT checkpoint (the human, Nov 27): stage 2's last, named for OPD (opd/run.sbatch); stage 1's are then dropped,
+# as the Hub repo already holds only the latest
+ls -d "$RUN"-final/ckpt/global_step_*/huggingface | sort -V | tail -1 > "$RUN/sft.final"
+rm -rf "$RUN/ckpt"
+echo "== $(date +%H:%M) SFT done: $(cat "$RUN/sft.final")"
