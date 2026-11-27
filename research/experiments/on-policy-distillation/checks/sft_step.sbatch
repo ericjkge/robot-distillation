@@ -15,7 +15,7 @@
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/check-%x-%j.out
 set -uo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
-CODE=$OUT/code/bf9b274
+CODE=$OUT/code/${CODE:-bf9b274}  # bf9b274-headfix: lm_head in the root FSDP unit
 export WORK_DIR=$OUT/work PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 RUN=$OUT/checks/sft_step/run-$SLURM_JOB_ID
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
