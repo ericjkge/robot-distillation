@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu_requeue
 #SBATCH --gres=gpu:2,vram:48G
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG
-#SBATCH --time=01:30:00
+#SBATCH --time=02:30:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=160G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/check-%x-%j.out
@@ -13,7 +13,9 @@ set -uo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
 CODE=$OUT/code/47200a9-mbfix
 PEAR=$CODE/third_party/pear
-EPISODE=$OUT/runs/collect-bf9b274/sft-set/665d9802-43b2-41dc-af59-958946203e3f.pt  # the longest: 158,599 tokens
+SET=$OUT/runs/collect-bf9b274/sft-set
+# the median (16,374 tokens), one of 79,815, and the longest (158,599): the teacher's rate by length
+EPISODES=${EPISODES:-"$SET/4fd0e390-427b-45d3-ae24-5dfe2f1c065f.pt $SET/$(basename "$(ls $OUT/checks/sft_step/episodes/*.pt | sed -n 3p)") $SET/665d9802-43b2-41dc-af59-958946203e3f.pt"}
 export WORK_DIR=$OUT/work VERL_CHANGE_IN_PROGRESS=1 LOCAL_DIR=/var/tmp/$USER/pear  # as scripts/common.sh sets it
 # OPD's environment (scripts/common.sh pear_exec)
 source "$PEAR/scripts/gpu_process_variables.sh" "$WORK_DIR/envs/verl"
@@ -27,11 +29,11 @@ for variant in ${VARIANTS:-as_is mem85 mem85_chunk2048 mem85_chunk2048_len164k};
   echo "== $(date +%H:%M:%S) $variant"
   nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits -lms 1000 > "/tmp/mem-$variant" &
   poll=$!
-  timeout 1500 python /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/checks/teacher_prefill.py \
-    "$OUT/checks/teacher_prefill/$variant.yaml" "$EPISODE" > "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" 2>&1
+  timeout 7200 python /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/checks/teacher_prefill.py \
+    "$OUT/checks/teacher_prefill/$variant.yaml" $EPISODES > "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" 2>&1
   status=$?
   # vLLM's memory account and the first error, from the full log
-  grep -E 'Model loading took|Available KV cache|KV cache size|Maximum concurrency|max_model_len|Error|error|out of memory|episode|teacher up|scored' "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" |
+  grep -E 'Model loading took|Available KV cache|KV cache size|Maximum concurrency|max_model_len|Error|error|out of memory|episodes;|teacher up|scored' "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" |
     grep -v 'UserWarning\|warnings.warn' | head -30
   echo "== $variant exit $status; peak MiB per GPU: $(sort -t, -k1,1n -k2,2n "/tmp/mem-$variant" | awk -F', ' '{m[$1]=$2>m[$1]?$2:m[$1]} END {for (g in m) printf "%s:%s ", g, m[g]}')"
   kill $poll
