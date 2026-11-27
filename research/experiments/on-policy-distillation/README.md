@@ -138,6 +138,6 @@ Watch goal 5, 7 and 9 to completion (60576751, then workers 60796702–03); SFT 
   - SFT starts at a cutoff with whatever has been kept, instead of waiting for every suite.
   - Each task stops after fewer trials (e.g. 30 instead of 50), which cuts most of the failing tasks' time.
 - **OPD's batch versus Algorithm 1 (03:50 Nov 27):** OPD trains only on episodes rolled out wholly by the current policy (`max_off_policy_threshold=1`, verl's `drop`; on main 212b3b4, as the human asked). PEAR's separate_async trainer keeps 16 episodes generating, resumes them on new weights and drops those that span two versions, so each batch is the first 64 to finish after an update: long episodes (mostly failures) are slightly under-represented. A batch of exactly B episodes dispatched per version needs a sampler that caps dispatch per version with verl's `wait` strategy; PEAR refuses custom samplers (`pear/trainer/trainer.py`), so it is a PEAR change plus a GPU smoke. Awaiting the human.
-- **PEAR upstream report:** posted as https://github.com/mit-han-lab/pear/issues/19 (04:20 Nov 27, from eddykang06; text in `opd/pear-issue.md`).
+- **PEAR upstream report:** https://github.com/mit-han-lab/pear/issues/19, posted 04:20 Nov 27 and closed by the human soon after as not reproduced; reopen if OPD hits the crash again.
 
 ## Dead ends
