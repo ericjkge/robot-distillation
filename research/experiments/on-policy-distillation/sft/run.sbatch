@@ -36,6 +36,10 @@ cd "$CODE"
 echo "code $(git rev-parse HEAD) on $(hostname); $(ls "$SET"/*.pt | wc -l) episodes in $SET"
 
 start=$SECONDS
+# the fused head (as PEAR trains Qwen3.5) gives log-probs 512 tokens at a time: the full logits of the longest episode
+# (159k tokens, 40k per GPU, 248k vocabulary) need 17 GiB more than a 48 GB GPU had (60884159, Nov 27)
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 MODEL=$WORK_DIR/models/$STUDENT EPISODES_DIR=$SET RUN=$OUT/runs/sft-${CODE_SHA:0:7}/$STUDENT NGPUS=4 \
-  bash scripts/sft.sh trainer.save_freq=10 trainer.max_ckpt_to_keep=2  # a requeued job resumes from the latest
+  bash scripts/sft.sh trainer.save_freq=10 trainer.max_ckpt_to_keep=2 \
+  model.use_fused_kernels=true  # a requeued job resumes from the latest
 echo "sft $STUDENT: $((SECONDS - start)) s"
