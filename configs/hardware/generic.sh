@@ -22,3 +22,10 @@ HARDWARE_ARGS=(
   actor_rollout_ref.actor.fsdp_config.optimizer_offload=false
   actor_rollout_ref.actor.fsdp_config.optimizer_offload_step=false
 )
+# the distillation teacher's vLLM on 48 GB GPUs (TP 2: 26 GiB of weights each, with the fp32 head and vision tower):
+# verl's default memory share (0.5) leaves no KV cache, and its prompt log-probs, which vLLM computes outside its
+# budget (fp32 logits over the vocabulary per prefill chunk), need chunks of 2,048 tokens rather than 8,192
+TEACHER_HARDWARE_ARGS=(
+  distillation.teacher_models.teacher_model.inference.gpu_memory_utilization=0.9
+  distillation.teacher_models.teacher_model.inference.max_num_batched_tokens=2048
+)

@@ -27,7 +27,7 @@ distillation) avoids the compounding errors of imitating teacher trajectories al
 | --- | --- | --- |
 | 1. Teacher data | Run the teacher on LIBERO's four suites. Keep each successful episode's full multi-round context: images, reasoning and actions. | `scripts/collect.sh` |
 | 2. SFT | Fine-tune each student on the teacher's episodes, up to 25 per task (`src/opd/select_episodes.py`), with the loss on every generated token, in the same context format as at inference. | `scripts/sft.sh` |
-| 3. On-policy distillation | Starting from the SFT checkpoint, at each step the student runs LIBERO episodes, the teacher scores every student token, and the student takes one policy-gradient step on the per-token reverse KL. There is no task reward. | `scripts/distill.sh` |
+| 3. On-policy distillation | Starting from the SFT checkpoint, at each step the student runs 32 LIBERO episodes, the teacher scores every student token, and the student takes one policy-gradient step on the per-token reverse KL. There is no task reward. | `scripts/distill.sh` |
 | 4. Evaluation | Measure the success rate of any model on LIBERO, LIBERO-Pro or LIBERO-Plus. | `scripts/eval.sh` |
 
 The project is built on [PEAR](https://github.com/mit-han-lab/pear), which provides the LIBERO environments, the
@@ -68,7 +68,9 @@ Ray steps (`collect`, `distill`, `eval`) start through `scripts/run.sh`:
 - **Slurm:** `sbatch [resources] scripts/run.sh <step>` starts Ray over the job's machines. `ROLES` names each machine's
   role, one per machine in node order: `trainer`, `rollout` or `teacher`.
 - **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
-  and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step.
+  and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step. The machines can belong to separate
+  jobs. Where NCCL cannot connect over RoCE (`socketFinalizeAccept ... wrong type`), export `NCCL_IB_DISABLE=1` on
+  every machine to use TCP.
 
 Each run starts its own Ray cluster (a free port, or `PORT`), so runs can share a machine.
 
@@ -109,7 +111,8 @@ python -m opd.report plot $R/plots $R/eval-9b $R/eval-sft-9b   # needs matplotli
 ```
 
 **Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes. The default, `GPU=generic`, runs on any CUDA GPU
-without PEAR's custom kernels. Add a profile as a file in `configs/hardware/`.
+without PEAR's custom kernels and fits the distillation teacher on two 48 GB GPUs. Add a profile as a file in
+`configs/hardware/`.
 
 ## Tests
 

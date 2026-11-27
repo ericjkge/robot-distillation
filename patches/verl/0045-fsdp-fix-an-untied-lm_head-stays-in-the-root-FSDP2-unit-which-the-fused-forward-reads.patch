@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pear <pear@localhost>
+Date: Mon, 17 Sep 2001 00:00:00 +0000
+Subject: [PATCH] [fsdp] fix: an untied lm_head stays in the root FSDP2 unit,
+ which the fused forward reads
+
+---
+ verl/utils/fsdp_utils.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/verl/utils/fsdp_utils.py b/verl/utils/fsdp_utils.py
+index fa39ff2170832a7efae08569aba02114e68df56b..452e7c3fe1183703cc2663c7d67899588469cfe3 100644
+--- a/verl/utils/fsdp_utils.py
++++ b/verl/utils/fsdp_utils.py
+@@ -556,7 +556,9 @@ def _select_fsdp2_wrap_targets(model, fsdp_transformer_layer_cls_to_wrap):
+     must not be wrapped separately.
+     """
+     _tie = getattr(model.config, "tie_word_embeddings", False)
+-    _wrap_by_name = set() if _tie else {"embed_tokens", "lm_head"}
++    # an untied lm_head stays in the root unit: the fused forward reads lm_head.weight without calling lm_head, so as a
++    # unit of its own its hooks never run (no unshard, no onload under CPUOffloadPolicy, no gradient reduce-scatter)
++    _wrap_by_name = set() if _tie else {"embed_tokens"}
+ 
+     modules = []
+     for name, module in model.named_modules():

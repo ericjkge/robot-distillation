@@ -77,6 +77,22 @@ def test_distillation_is_reverse_kl_without_task_reward(run_step):
     assert config.trainer.test_freq == 10
 
 
+@pytest.mark.parametrize("gpu", ["generic", "h100"])
+def test_distillation_batch_and_teacher_context(run_step, gpu):
+    _, args = run_step("distill.sh", GPU=gpu, **DISTILL)
+    config = compose_step("distill.sh", args)
+    assert (
+        config.data.train_batch_size == config.actor_rollout_ref.actor.ppo_mini_batch_size == 32
+    )  # one update a batch
+    teacher = config.distillation.teacher_models.teacher_model.inference
+    # verl's check: room for the student's prompt, its full response and one token
+    assert teacher.max_model_len == config.data.max_prompt_length + config.data.max_response_length + 1
+    if gpu == "generic":  # the teacher's vLLM on 48 GB GPUs
+        assert (teacher.gpu_memory_utilization, teacher.max_num_batched_tokens) == (0.9, 2048)
+    else:  # PEAR's recipe as it is
+        assert "gpu_memory_utilization=" not in " ".join(a for a in args if a.startswith("distillation."))
+
+
 def test_sft_config_composes(run_step, tmp_path):
     _, args = run_step("sft.sh", MODEL="/models/student", EPISODES_DIR=tmp_path / "ep", NGPUS=1)
     config = compose_step("sft.sh", args)
