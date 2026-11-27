@@ -26,10 +26,24 @@ from verl.experimental.teacher_loop.teacher_manager import AsyncTeacherLLMServer
 from verl.single_controller.ray import RayResourcePool
 
 
+VISION_START, VISION_END = 248053, 248054
+
+
 def load(episode_path: str):
+    """<episode .pt>[@N]: with @N, the episode's first N tokens, cut back to the last image's end (no image split)."""
+    episode_path, _, cut = episode_path.partition("@")
     episode = torch.load(episode_path, weights_only=False, mmap=True)
     ids = episode["input_ids"].tolist()
     grids = episode["multi_modal_inputs"]["image_grid_thw"].tolist()
+    if cut:
+        n = int(cut)
+        starts = [i for i, t in enumerate(ids[:n]) if t == VISION_START]
+        ends = [i for i, t in enumerate(ids[:n]) if t == VISION_END]
+        if starts and (not ends or starts[-1] > ends[-1]):
+            n = starts[-1]  # the cut falls inside an image: end before it
+        ids = ids[:n]
+        grids = grids[: ids.count(VISION_START)]
+        episode = {**episode, "loss_mask": episode["loss_mask"][:n]}
     assert all(g == [1, 32, 32] for g in grids), grids  # 512 x 512 frames
     rng = np.random.default_rng(0)
     images = [Image.fromarray(rng.integers(0, 256, (512, 512, 3), dtype=np.uint8)) for _ in grids]
@@ -67,12 +81,16 @@ def main(config_path: str, episode_paths: list[str]) -> None:
             )
 
         start = time.time()
-        teacher_ids, logprobs = loop.run_until_complete(score())
+        try:
+            teacher_ids, logprobs = loop.run_until_complete(asyncio.wait_for(score(), 600))
+        except TimeoutError:
+            print(f"HANGS: {len(ids)} tokens ({len(images)} images) not scored in 600 s", flush=True)
+            break  # the engine is still busy with it
         took = time.time() - start
         lp = logprobs.float().flatten()
         # kept beside the config for the positions that differ: <config stem>-<episode>.pt
         torch.save({"ids": torch.tensor(ids), "teacher_ids": teacher_ids, "logprobs": logprobs, "loss_mask": episode["loss_mask"]},
-                   config_path.rsplit(".", 1)[0] + "-" + path.rsplit("/", 1)[-1])
+                   config_path.rsplit(".", 1)[0] + "-" + path.rsplit("/", 1)[-1].replace("@", "-"))
         print(
             f"scored {len(ids)} tokens ({len(images)} images) in {took:.0f} s ({len(ids) / took:.0f} tokens/s): "
             f"finite {bool(torch.isfinite(lp[1:]).all())}, mean over generated tokens "
