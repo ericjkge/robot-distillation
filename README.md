@@ -15,10 +15,10 @@ distillation) avoids the compounding errors of imitating teacher trajectories al
 - **Students:** [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) and [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B). They share the teacher's tokenizer and use
   its chat template, which sets the reasoning effort in the system prompt, so a student's prompts match the teacher's
   token for token.
-- **Teacher rollouts:** [eddykang06/qwen3.8-27b-pear-libero-rollouts](https://huggingface.co/datasets/eddykang06/qwen3.8-27b-pear-libero-rollouts), the teacher's
-  episodes at xhigh effort (step 1), used for SFT
-- **Models:** the [robot-distillation collection](https://huggingface.co/collections/eddykang06/robot-distillation-6b072adc11798b1c0c17c36c)
-  holds the rollouts and each student as it is trained (`qwen3.5-<9b|4b>-pear-libero-<sft|opd|...>`)
+- **Teacher rollouts:** [eddykang06/qwen3.8-27b-pear-libero-rollouts](https://huggingface.co/datasets/eddykang06/qwen3.8-27b-pear-libero-rollouts),
+  the teacher's episodes at xhigh effort, used for SFT
+- **Models:** the [robot-distillation collection](https://huggingface.co/collections/eddykang06/robot-distillation-6b072adc11798b1c0c17c36c):
+  the rollouts and each trained student (`qwen3.5-<9b|4b>-pear-libero-<sft|opd|...>`)
 - **Benchmarks:** LIBERO (2,000 episodes: 4 suites × 10 tasks × 50 initial states), LIBERO-Pro and LIBERO-Plus
 
 ## Pipeline
@@ -52,14 +52,16 @@ third_party/    PEAR, pinned as a submodule
 git clone --recursive https://github.com/ericjkge/robot-distillation.git && cd robot-distillation
 export WORK_DIR=/shared/path       # a directory every machine sees: environments, models and runs
 bash scripts/setup.sh              # PEAR's environments (verl, LIBERO, LIBERO-Pro, LIBERO-Plus) and the three models
-# on a cluster with several 8.x GPU types (A100, A6000, A40, L40S): CUDA_ARCH=8.0 bash scripts/setup.sh
 ```
+
+Setup compiles flash-attn for the GPU it runs on. If your cluster mixes GPU types, set `CUDA_ARCH=8.0`: those kernels
+run on every 8.x GPU (A100, A6000, A40, L40S), while a build for an L40S (8.9) fails on the others. H100s (9.0) need a
+build of their own.
 
 ## Running
 
-Every step reads its settings from environment variables, and passes any extra arguments to Hydra as config
-overrides. The steps that use Ray (`collect`, `distill`, `eval`) start through `scripts/run.sh`, which works with any
-cluster:
+Each step reads its settings from environment variables and passes extra arguments to Hydra as config overrides. The
+Ray steps (`collect`, `distill`, `eval`) start through `scripts/run.sh`:
 
 - **One machine:** `bash scripts/run.sh <step>` starts Ray locally and gives the machine every role.
 - **Slurm:** `sbatch [resources] scripts/run.sh <step>` starts Ray over the job's machines. `ROLES` names each machine's
@@ -67,14 +69,12 @@ cluster:
 - **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
   and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step.
 
-Each run starts its own Ray cluster (a free port, or `PORT`, and its own temporary directory), so runs can share a
-machine.
+Each run starts its own Ray cluster (a free port, or `PORT`), so runs can share a machine.
 
-Ray needs more than 32 CPUs: PEAR's data queue starts 32 storage units of one CPU each and waits until all of them are
-placed. With fewer CPUs, lower their number with `transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`.
-The other claims on a machine's CPUs: 2 per rollout GPU (verl's placement group for each vLLM replica), one per LIBERO
-simulator (`LIBERO_SERVERS`) and one for the queue's controller. On 20 CPUs and four rollout GPUs, for example, 8
-simulators leave room for 3 storage units.
+**CPUs.** PEAR's data queue waits for 32 one-CPU storage units. On a smaller machine, lower them with
+`transfer_queue.backend.SimpleStorage.num_data_storage_units=<n>`, leaving 2 CPUs per rollout GPU, one per LIBERO
+simulator (`LIBERO_SERVERS`) and one for the queue's controller. For example, 20 CPUs with 4 rollout GPUs and 8
+simulators leave room for 3 units.
 
 ```bash
 M=$WORK_DIR/models R=$WORK_DIR/runs
@@ -82,8 +82,7 @@ M=$WORK_DIR/models R=$WORK_DIR/runs
 # 1. teacher episodes, at xhigh effort
 MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts/collect.sh
 
-# 2. SFT, on up to 25 of the teacher's episodes per task (all of a task's, when it has fewer), from collection runs or
-#    a download of the episodes' Hub dataset (index.jsonl and <suite>/episodes/), or both: an episode counts once
+# 2. SFT on up to 25 teacher episodes per task, from collection runs and/or a download of the Hub dataset
 python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher [<Hub dataset download> ...]
 MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/sft-set RUN=$R/sft-9b bash scripts/sft.sh
 
@@ -95,26 +94,24 @@ MODEL=<SFT checkpoint>,TEACHER=$M/Qwen3.8-27B-PEAR-LIBERO_only,RUN=$R/opd-9b scr
 MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> RUN=$R/eval-9b bash scripts/run.sh scripts/eval.sh
 ```
 
-To evaluate the teacher at another reasoning effort, add the override
-`+data.apply_chat_template_kwargs.reasoning_effort=low`. Evaluation writes per-episode records to
-`$RUN/val_dumps/eval_<step>.jsonl` and the success rates to `eval_<step>_summary.json`, with 256,000 response
-tokens per episode as in PEAR's evaluation recipes (training uses 160,000). A large set splits across jobs, each
-resuming where it stopped, with `python -m opd.episodes <episode file> <run dir> --shard i/n`. To compare models
-(success rate ± SE, time and reasoning tokens per episode) and plot them:
+Evaluation writes per-episode records to `$RUN/val_dumps/eval_<step>.jsonl` and success rates to
+`eval_<step>_summary.json`, with 256,000 response tokens per episode as in PEAR's evaluation (training uses 160,000).
+
+- **Other reasoning effort:** add `+data.apply_chat_template_kwargs.reasoning_effort=low`.
+- **Large sets:** split across resumable jobs with `python -m opd.episodes <episode file> <run dir> --shard i/n`.
+- **Comparing models** (success rate ± SE, time and reasoning tokens per episode):
 
 ```bash
 python -m opd.report summary $R/eval-9b --tokenizer $M/Qwen3.5-9B [--vs $R/eval-sft-9b]
 python -m opd.report plot $R/plots $R/eval-9b $R/eval-sft-9b   # needs matplotlib
 ```
 
-**Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes for those GPUs. The default, `GPU=generic`,
-runs on any CUDA GPU (`configs/hardware/generic.sh`) without PEAR's custom kernels. To add a profile, add a file to
-`configs/hardware/`.
+**Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes. The default, `GPU=generic`, runs on any CUDA GPU
+without PEAR's custom kernels. Add a profile as a file in `configs/hardware/`.
 
 ## Tests
 
-The tests run on CPU: they check the command each step builds, compose every step's config against PEAR's and verl's,
-and cover the SFT data and the chat template.
+The tests run on CPU: each step's command and config, the SFT data and the chat template.
 
 ```bash
 pip install -r requirements.txt
