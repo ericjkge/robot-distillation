@@ -11,7 +11,11 @@ set -uo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
 if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then unset ROCR_VISIBLE_DEVICES; fi  # as scripts/common.sh does
 hostname
+ip -o -4 addr show | awk '{print $2, $4}'
+# NCCL's sockets off the BMC (idrac, 169.254.x) and loopback interfaces: the first try picked mismatched interfaces
+# ("socketFinalizeAccept ... wrong type"); Ray's workers inherit these from ray start
+export NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-^lo,idrac} NCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT,NET
 RAY_TMPDIR=/var/tmp/$USER/ray-crossnode timeout 3000 "$OUT/work/envs/verl/bin/python" \
   /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/checks/crossnode.py \
-  "$ROLE" "$OUT/checks/crossnode/address-$TAG" 2>&1 | grep -v Warning
+  "$ROLE" "$OUT/checks/crossnode/address-$TAG" 2>&1 | grep -v Warning | grep -v "NCCL INFO.*\(Channel\|Connected\|ring\|Trees\|P2P\)"
 "$OUT/work/envs/verl/bin/ray" stop --force > /dev/null 2>&1
