@@ -14,7 +14,7 @@ OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
 CODE=$OUT/code/47200a9-mbfix
 PEAR=$CODE/third_party/pear
 EPISODE=$OUT/runs/collect-bf9b274/sft-set/665d9802-43b2-41dc-af59-958946203e3f.pt  # the longest: 158,599 tokens
-export WORK_DIR=$OUT/work VERL_CHANGE_IN_PROGRESS=1
+export WORK_DIR=$OUT/work VERL_CHANGE_IN_PROGRESS=1 LOCAL_DIR=/var/tmp/$USER/pear  # as scripts/common.sh sets it
 # OPD's environment (scripts/common.sh pear_exec)
 source "$PEAR/scripts/gpu_process_variables.sh" "$WORK_DIR/envs/verl"
 export PYTHONPATH=$PEAR/pear/utils/sitecustomize:$PEAR:$PEAR/3rdparty/verl/src:$CODE/src
