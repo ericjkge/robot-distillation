@@ -28,8 +28,12 @@ for variant in ${VARIANTS:-as_is mem85 mem85_chunk2048 mem85_chunk2048_len164k};
   nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits -lms 1000 > "/tmp/mem-$variant" &
   poll=$!
   timeout 1500 python /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/checks/teacher_prefill.py \
-    "$OUT/checks/teacher_prefill/$variant.yaml" "$EPISODE" 2>&1 | grep -v 'UserWarning\|warnings.warn' | tail -40
-  echo "== $variant exit ${PIPESTATUS[0]}; peak MiB per GPU: $(sort -t, -k1,1n -k2,2n "/tmp/mem-$variant" | awk -F', ' '{m[$1]=$2>m[$1]?$2:m[$1]} END {for (g in m) printf "%s:%s ", g, m[g]}')"
+    "$OUT/checks/teacher_prefill/$variant.yaml" "$EPISODE" > "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" 2>&1
+  status=$?
+  # vLLM's memory account and the first error, from the full log
+  grep -E 'Model loading took|Available KV cache|KV cache size|Maximum concurrency|max_model_len|Error|error|out of memory|episode|teacher up|scored' "$OUT/checks/teacher_prefill/$variant-$SLURM_JOB_ID.log" |
+    grep -v 'UserWarning\|warnings.warn' | head -30
+  echo "== $variant exit $status; peak MiB per GPU: $(sort -t, -k1,1n -k2,2n "/tmp/mem-$variant" | awk -F', ' '{m[$1]=$2>m[$1]?$2:m[$1]} END {for (g in m) printf "%s:%s ", g, m[g]}')"
   kill $poll
   ray stop --force > /dev/null 2>&1
 done
