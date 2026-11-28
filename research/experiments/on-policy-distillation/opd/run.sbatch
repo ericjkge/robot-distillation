@@ -3,7 +3,7 @@
 # form one Ray cluster (opd/node.sh): this trainer job (4 GPUs), a teacher job (2 GPUs, TP 2) and ROLLOUT_JOBS rollout
 # jobs (2 GPUs each, one 9B replica per GPU, 8 episodes each at once). Settings: the note's OPD configuration table.
 #   teacher, rollouts: opd/node.sbatch (2 GPUs) with ROLE=teacher|rollout and the variables below
-#   trainer: this script with ROLE=trainer, --dependency=after:<teacher id>:<rollout ids>
+#   trainer: this script with ROLE=trainer (no dependency: it waits for SFT itself)
 #   all: LAUNCH=<new tag> ROLLOUT_JOBS=<n> CODE=47200a9-mbfix SFT_SHA=bf9b274
 # STEPS is a cap: the run is stopped by hand. PEAR checkpoints every update and verl resumes from the latest.
 #SBATCH --partition=gpu_requeue  # submitted with -p gpu_quad: not preemptible, as losing one job stops the cluster
@@ -26,8 +26,16 @@ cd "$CODE"
 echo "$ROLE on $(hostname): $(nvidia-smi --query-gpu=name --format=csv,noheader | sort | uniq -c)"
 [ "$ROLE" = trainer ] || exec bash "$HERE/node.sh"
 
-# the student: the one SFT checkpoint (sft.final, written when SFT ends), from its Hub repo once it holds it
-FINAL=$(cat "$OUT/runs/sft-$SFT_SHA/Qwen3.5-9B/sft.final")
+# the student: the one SFT checkpoint (sft.final, written when SFT ends), from its Hub repo once it holds it. The jobs
+# are queued without a dependency on SFT, to gain age priority, so the trainer waits for it (and stops the cluster if
+# SFT job SFT_NAME ends without one).
+F=$OUT/runs/sft-$SFT_SHA/Qwen3.5-9B/sft.final
+until [ -s "$F" ]; do
+  sleep 60
+  sft=$(squeue -h -u "$USER" -n "${SFT_NAME:-SFT-9B}" -o %i) || continue
+  [ -n "$sft" ] || [ -s "$F" ] || { echo "SFT ended without sft.final"; touch "$CLUSTER/done"; exit 1; }
+done
+FINAL=$(cat "$F")
 SFT=$("$WORK_DIR/envs/verl/bin/python" "$HERE/sft_from_hub.py" "$FINAL" eddykang06/qwen3.5-9b-pear-libero-sft "$OUT/models")
 echo "student $SFT (SFT $FINAL)"
 T=distillation.teacher_models.teacher_model.inference

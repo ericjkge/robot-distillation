@@ -1,8 +1,8 @@
 #!/bin/bash
 # One machine of a Ray cluster spread over separate Slurm jobs (O2 allows one node per job), all given one fresh
-# $CLUSTER directory. The teacher and rollout jobs start first and wait; the trainer job, submitted to start after
-# them, is the head: it writes its address to $CLUSTER/head, waits for all $NODES machines, runs the step ("$@") and
-# writes $CLUSTER/done. The others join that address and leave when the step is done or the head has gone.
+# $CLUSTER directory, starting in any order. The trainer job is the head: it writes its address to $CLUSTER/head,
+# waits for all $NODES machines, runs the step ("$@") and writes $CLUSTER/done. The others join that address and leave
+# when the step is done or the head has gone (or at once, if the trainer wrote done without starting the cluster).
 #   ROLE=trainer|teacher|rollout CLUSTER=<new dir> NODES=<machines> bash opd/node.sh [step...]
 # Run from the code directory with WORK_DIR set. NCCL across O2's machines works over TCP only (checks/crossnode.py).
 set -euo pipefail
@@ -30,7 +30,10 @@ if [ "$ROLE" = trainer ]; then
   echo "$(date +%H:%M) all $NODES machines joined"
   "$@"
 else
-  until [ -e "$CLUSTER/head" ]; do sleep 30; done
+  until [ -e "$CLUSTER/head" ]; do
+    [ ! -e "$CLUSTER/done" ] || exit 0
+    sleep 30
+  done
   setsid bash scripts/ray_node.sh "$ROLE" "$(cat "$CLUSTER/head")" &
   node=$!
   trap 'kill -- -$node 2> /dev/null' EXIT
