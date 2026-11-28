@@ -2,8 +2,9 @@
 # On-policy distillation of the 9B from its SFT checkpoint (stage 2's last, from the Hub), as separate Slurm jobs that
 # form one Ray cluster (opd/node.sh): this trainer job (4 GPUs), a teacher job (2 GPUs, TP 2) and ROLLOUT_JOBS rollout
 # jobs (2 GPUs each, one 9B replica per GPU, 8 episodes each at once). Settings: the note's OPD configuration table.
-#   trainer: ROLE=trainer ROLLOUT_JOBS=<n> CODE=47200a9-mbfix SFT_SHA=bf9b274
-#   others:  opd/node.sbatch (2 GPUs), ROLE=teacher|rollout TRAINER_JOB=<trainer id>, --dependency=after:<trainer id>
+#   teacher, rollouts: opd/node.sbatch (2 GPUs) with ROLE=teacher|rollout and the variables below
+#   trainer: this script with ROLE=trainer, --dependency=after:<teacher id>:<rollout ids>
+#   all: LAUNCH=<new tag> ROLLOUT_JOBS=<n> CODE=47200a9-mbfix SFT_SHA=bf9b274
 # STEPS is a cap: the run is stopped by hand. PEAR checkpoints every update and verl resumes from the latest.
 #SBATCH --partition=gpu_quad  # not preemptible: losing one job stops the whole cluster
 #SBATCH --gres=gpu:4,vram:48G
@@ -19,8 +20,8 @@ SFT_SHA=${SFT_SHA:?the SFT run code, e.g. bf9b274}
 HERE=/n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/opd
 RUN=$OUT/runs/opd-$SFT_SHA/Qwen3.5-9B
 export WORK_DIR=$OUT/work VERL_CHANGE_IN_PROGRESS=1 LIBERO_SERVERS=8  # the verl fixes are commits on PEAR's checkout
-export ROLE=${ROLE:?trainer | teacher | rollout} TRAINER_JOB=${TRAINER_JOB:-$SLURM_JOB_ID}
-export CLUSTER=$RUN/cluster-$TRAINER_JOB NODES=$((2 + ${ROLLOUT_JOBS:?rollout jobs}))
+export ROLE=${ROLE:?trainer | teacher | rollout} CLUSTER=$RUN/cluster-${LAUNCH:?a new tag per launch}
+export NODES=$((2 + ${ROLLOUT_JOBS:?rollout jobs}))
 cd "$CODE"
 echo "$ROLE on $(hostname): $(nvidia-smi --query-gpu=name --format=csv,noheader | sort | uniq -c)"
 [ "$ROLE" = trainer ] || exec bash "$HERE/node.sh"
