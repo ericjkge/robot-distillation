@@ -26,7 +26,7 @@ The 4B student is not run (human, Nov 23).
 
 *Updated 2026-11-23 23:45. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
-**SFT** (60955095, queued, est. 01:42 Nov 28): standard single-stage SFT if the teacher set completes within 3 h of SFT's start, else two stages (the human, Nov 27/28): `sft/staged.sh` waits, GPUs held, up to 3 h for every task to complete on the Hub; then either 3 epochs on up to 25 successes per task (seed 0, every source), or 2 epochs on the episodes there and, once complete (at most 4 h more), 1 epoch on the final set (stage 1's once, later ones three times). The last checkpoint is named in `sft.final`. A draw at 23:50 gave 812 episodes (o2 704, runpod 87, sophie 21; 30 of 37 tasks at 25); Sophie's last ~38 trials est. done about 02:30.
+**SFT** (60955095, queued, est. 01:42 Nov 28): SFT as early as possible (the human, Nov 28): `sft/staged.sh` runs standard SFT (3 epochs on up to 25 successes per task, seed 0, every source) if every task is complete when it starts; otherwise, with no idle wait, 2 epochs on the episodes there, then 1 epoch on the final set (stage 1's once, later ones three times), waiting at most 1 h after stage 1. Job lowered to 12 h and 400G (the probe peaked at 212 GB) to fit more slots; est. start slipped to 06:03. The last checkpoint is named in `sft.final`. A draw at 23:50 gave 812 episodes (o2 704, runpod 87, sophie 21; 30 of 37 tasks at 25); Sophie's last ~38 trials est. done about 02:30.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
 

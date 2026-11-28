@@ -2,9 +2,9 @@
 # SFT on the teacher's episodes (the human, Nov 27). The SFT job's code clone ($OUT/code/bf9b274) has scripts/sft.sh
 # replaced by a call to this script (its original kept as scripts/sft-once.sh); sft/run.sbatch calls it with MODEL, RUN
 # and NGPUS. Every episode is trained on 3 epochs, up to 25 successes per task (seed 0) over every source:
-#   - every task complete on the Hub (collect/complete.py) within WAIT_HOURS (default 3): one stage, 3 epochs;
+#   - every task complete on the Hub (collect/complete.py) within WAIT_HOURS (default 0: at the start): one stage, 3 epochs;
 #   - otherwise two stages, so the GPUs do not wait longer: 2 epochs on the episodes there now ($RUN), then, once every
-#     task is complete or after WAIT2_HOURS more (default 4), 1 epoch from that checkpoint ($RUN-final) on the final set
+#     task is complete or after WAIT2_HOURS more (default 1), 1 epoch from that checkpoint ($RUN-final) on the final set
 #     (sft/final_set.py: stage 1's episodes once, each task topped up to 25 with later ones three times).
 # The last checkpoint is named in $RUN/sft.final for OPD. A requeued job resumes in the same mode ($RUN/mode) and stage
 # (verl resumes from the run directory's latest checkpoint).
@@ -50,17 +50,17 @@ last() { ls -d "$1"/ckpt/global_step_*/huggingface | sort -V | tail -1; }
 EXTRA=("$@")
 
 if [ ! -e "$RUN/mode" ]; then
-  if wait_ready "${WAIT_HOURS:-3}"; then echo single > "$RUN/mode"; else echo two > "$RUN/mode"; fi
+  if wait_ready "${WAIT_HOURS:-0}"; then echo single > "$RUN/mode"; else echo two > "$RUN/mode"; fi
 fi
 if [ "$(cat "$RUN/mode")" = single ]; then
   build "$SETS/sft-set-final" draw
   train "$MODEL" "$SETS/sft-set-final" "$RUN" 3
   last "$RUN" > "$RUN/sft.final"
 else
-  echo "== $(date +%H:%M) tasks still short after ${WAIT_HOURS:-3} h: two stages"
+  echo "== $(date +%H:%M) tasks still short after ${WAIT_HOURS:-0} h: two stages"
   build "$SETS/sft-set-stage1" draw
   [ -e "$RUN/stage1.done" ] || { train "$MODEL" "$SETS/sft-set-stage1" "$RUN" 2; touch "$RUN/stage1.done"; }
-  wait_ready "${WAIT2_HOURS:-4}" || echo "== $(date +%H:%M) tasks still short: stage 2 on what is there"
+  wait_ready "${WAIT2_HOURS:-1}" || echo "== $(date +%H:%M) tasks still short: stage 2 on what is there"
   build "$SETS/sft-set-stage2" top_up "$SETS/sft-set-stage1"
   train "$(last "$RUN")" "$SETS/sft-set-stage2" "$RUN-final" 1
   last "$RUN-final" > "$RUN/sft.final"
