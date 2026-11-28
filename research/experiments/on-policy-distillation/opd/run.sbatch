@@ -26,7 +26,8 @@ cd "$CODE"
 echo "$ROLE on $(hostname): $(nvidia-smi --query-gpu=name --format=csv,noheader | sort | uniq -c)"
 [ "$ROLE" = trainer ] || exec bash "$HERE/node.sh"
 
-# the student: the one SFT checkpoint (sft.final, written when SFT ends), from its Hub repo once it holds it. The jobs
+# the student: the one SFT checkpoint (sft.final, written when SFT ends), read where SFT wrote it (sft/live.py
+# publishes the same files to the Hub). The jobs
 # are queued without a dependency on SFT, to gain age priority, so the trainer waits for it (and stops the cluster if
 # SFT job SFT_NAME ends without one).
 F=$OUT/runs/sft-$SFT_SHA/Qwen3.5-9B/sft.final
@@ -35,9 +36,8 @@ until [ -s "$F" ]; do
   sft=$(squeue -h -u "$USER" -n "${SFT_NAME:-SFT-9B}" -o %i) || continue
   [ -n "$sft" ] || [ -s "$F" ] || { echo "SFT ended without sft.final"; touch "$CLUSTER/done"; exit 1; }
 done
-FINAL=$(cat "$F")
-SFT=$("$WORK_DIR/envs/verl/bin/python" "$HERE/sft_from_hub.py" "$FINAL" eddykang06/qwen3.5-9b-pear-libero-sft "$OUT/models")
-echo "student $SFT (SFT $FINAL)"
+SFT=$(cat "$F")
+echo "student $SFT"
 T=distillation.teacher_models.teacher_model.inference
 bash "$HERE/node.sh" env TRAINER_NNODES=1 TEACHER_NNODES=1 ROLLOUT_NNODES="$ROLLOUT_JOBS" \
   TRAINER_GPUS=4 ROLLOUT_GPUS=2 TEACHER_GPUS=2 TEACHER_TP=2 SESSIONS_PER_REPLICA=8 STEPS="${STEPS:-1000}" BATCH=32 \
