@@ -30,6 +30,8 @@ The 4B student is not run (human, Nov 23).
 
 **OPD** (submitted 00:20 Nov 28, launch `opd11280018`, code `47200a9-mbfix`, SFT `bf9b274`; the human: full results, 2 rollout jobs): teacher 61033248 and rollouts 61033249, 61033250 (`opd/node.sbatch`: gpu_requeue header, `-p gpu_quad`, gpu:2 vram:48G, 5 d; rollouts 16 CPUs 160G, teacher `-c 12 --mem=120G`; afterok SFT 60955095), trainer 61033251 (`opd/run.sbatch`: `-p gpu_quad`, gpu:4 vram:48G, 5 d, 12 CPUs, 400G; after the other three). The trainer takes the SFT checkpoint from the Hub (`opd/sft_from_hub.py`, uploaded by `sft/live.py`).
 
+**Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
+
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
 
 | Setting | Value | Why |
