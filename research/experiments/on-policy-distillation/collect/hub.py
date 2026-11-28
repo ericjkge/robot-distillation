@@ -50,6 +50,8 @@ for path in sorted(stage.glob("*/records/*.jsonl")):
 
 complete = sum(kept[suite, t] >= 25 or len(trials[suite, t]) >= 50 for suite in SUITES for t in range(10))
 status = "all 40 complete" if complete == 40 else f"{complete} of 40 complete"
+names = [f"`{name}`" for name in sorted({row["source"] for row in index})]
+sources = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " or " + names[-1]
 rows = []
 for suite in SUITES:
     cells = [f"{kept[suite, t]}/{ended[suite, t]}" if ended[suite, t] else "–" for t in range(10)]
@@ -71,7 +73,7 @@ Each task runs until it has 25 successes or has tried all 50 initial states. Tas
 
 | Path | Contents |
 | --- | --- |
-| `index.jsonl` | One row per episode run: `suite`, `task_id`, `trial_id` (initial state), `success`, `num_turns`, `uid`, `source` (cluster: `o2` or `runpod`), `episode` (path, if successful) |
+| `index.jsonl` | One row per episode run: `suite`, `task_id`, `trial_id` (initial state), `success`, `num_turns`, `uid`, `source` (who collected it: {sources}), `episode` (path, if successful) |
 | `<suite>/records/<source>.jsonl` | The full record of each run: prompts, outputs, actions, score |
 | `<suite>/episodes/<uid>.pt` | Each successful episode, as the student sees it at inference |
 
