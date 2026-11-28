@@ -50,6 +50,8 @@ The 4B student is not run (human, Nov 23).
 
 **13:06 Nov 28, SFT stage 1 done** (50 steps, saved without memory trouble at 480G); stage 2 started at once on 821 files (1 epoch, about 26 steps, from `global_step_50`), SFT done about 15:20.
 
+**15:03 Nov 28, SFT done** (61065444 COMPLETED 0:0): stage 2 ran 25 steps (loss 0.60 at step 1, 0.54 at step 13; peak 33 GB per GPU, host about 385 GB). `sft.final`: `runs/sft-bf9b274/Qwen3.5-9B-final/ckpt/global_step_25/huggingface`; live.py uploading it over the Hub repo's stage 1 checkpoint (uploaded 13:15). OPD on O2: `gpu` copies held by the GPU-minute cap, `gpu_quad` estimates Dec 3.
+
 **Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
