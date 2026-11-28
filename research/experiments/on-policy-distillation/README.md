@@ -42,6 +42,8 @@ The 4B student is not run (human, Nov 23).
 
 **10:56 Nov 28:** SFT at step 21 of stage 1's 50 (about 4.3 min a step; SFT done about 15:30). Slurm's estimates moved later as our fair share fell (285k to 252k while SFT runs): rollouts 05:00 and 08:20 Nov 29, teacher 08:40 Nov 29, trainer 07:00 Nov 30 (at 10:45: 13:40 to 21:12 today). Estimates have moved by hours either way before (60955095), so kept.
 
+**11:20 Nov 28, OPD on every partition open to us** (the human: OPD as soon as possible). Fresh estimates: 4 GPUs only on `gpu_quad` (16:50 Nov 29; `gpu` Dec 1; `gpu_mpi_quad` and `gpu_extra_priority` not open to our account); 2 GPUs on `gpu` 21:44 today, on `gpu_quad` 07:23 Nov 29. A queued job cannot be moved to `gpu`, nor list both partitions (QOS), so the teacher and one rollout have `gpu` copies, teacher 61075139 (`-c 12 --mem=120G`) and rollout 61075140 (`opd/node.sbatch`, now 3 d, `gpu`'s limit; together 280G of `gpu`'s 420G per user), racing 61065445 and 61065446: `sft/race.sh` keeps the first to start and cancels the other (`$OUT/logs/helper-race-*.log`). The trainer (61074728, est. 07:00 Nov 30) is the bottleneck.
+
 **Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
