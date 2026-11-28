@@ -6,7 +6,7 @@
 #   trainer: this script with ROLE=trainer, --dependency=after:<teacher id>:<rollout ids>
 #   all: LAUNCH=<new tag> ROLLOUT_JOBS=<n> CODE=47200a9-mbfix SFT_SHA=bf9b274
 # STEPS is a cap: the run is stopped by hand. PEAR checkpoints every update and verl resumes from the latest.
-#SBATCH --partition=gpu_quad  # not preemptible: losing one job stops the whole cluster
+#SBATCH --partition=gpu_requeue  # submitted with -p gpu_quad: not preemptible, as losing one job stops the cluster
 #SBATCH --gres=gpu:4,vram:48G
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16
 #SBATCH --time=5-00:00:00
