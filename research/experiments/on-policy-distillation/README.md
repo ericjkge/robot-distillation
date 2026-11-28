@@ -48,6 +48,8 @@ The 4B student is not run (human, Nov 23).
 
 **12:45 Nov 28, OPD for a teammate's GPUs** (the human: main usable by others, a teammate to queue OPD off O2). Main 885f8b4: the README's distillation on one 8-GPU machine (4 trainer, 2 rollout, 2 teacher GPUs; the mode of smoke 60940876), the SFT checkpoints' Hub repo, resume from the latest checkpoint, `GPU=generic`; main's defaults already match this run (xhigh, batch 32, the teacher's settings, the actor's state on the CPU, Algorithm 1's schedule). Suite in a fresh clone, verl patched: 100 passed (`test_report` needs matplotlib). O2 estimates at 12:30: trainer Dec 2, teacher Dec 1, rollouts Nov 30; the `gpu` copies 22:29 today.
 
+**13:06 Nov 28, SFT stage 1 done** (50 steps, saved without memory trouble at 480G); stage 2 started at once on 821 files (1 epoch, about 26 steps, from `global_step_50`), SFT done about 15:20.
+
 **Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
