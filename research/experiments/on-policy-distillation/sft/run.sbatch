@@ -10,7 +10,7 @@
 #SBATCH --time=12:00:00  # SFT takes about 6-8 h
 #SBATCH --cpus-per-task=20
 # host memory: the 4B pilot peaked at 147 GB on 2 GPUs; the 9B scales to about 330 GB. Submit the 4B with --mem=224G
-#SBATCH --mem=400G  # the 9B probe peaked at 212 GB on 2 GPUs
+#SBATCH --mem=480G  # training holds about 390 GB; a save at 400G was killed (61038523)
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/sft-%x-%j.out
 set -euo pipefail
 # a second copy of the job waits in another partition (sft/race.sh): it leaves if a copy already runs
@@ -42,6 +42,6 @@ start=$SECONDS
 # (159k tokens, 40k per GPU, 248k vocabulary) need 17 GiB more than a 48 GB GPU had (60884159, Nov 27)
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 MODEL=$WORK_DIR/models/$STUDENT EPISODES_DIR=$SET RUN=$OUT/runs/sft-${CODE_SHA:0:7}/$STUDENT NGPUS=4 \
-  bash scripts/sft.sh trainer.save_freq=10 trainer.max_ckpt_to_keep=2 \
-  model.use_fused_kernels=true  # a requeued job resumes from the latest
+  bash scripts/sft.sh trainer.save_freq=-1 'checkpoint.save_contents=[model,extra,hf_model]' \
+  model.use_fused_kernels=true
 echo "sft $STUDENT: $((SECONDS - start)) s"

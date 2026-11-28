@@ -59,7 +59,10 @@ if [ "$(cat "$RUN/mode")" = single ]; then
 else
   echo "== $(date +%H:%M) tasks still short after ${WAIT_HOURS:-0} h: two stages"
   build "$SETS/sft-set-stage1" draw
-  [ -e "$RUN/stage1.done" ] || { train "$MODEL" "$SETS/sft-set-stage1" "$RUN" 2; touch "$RUN/stage1.done"; }
+  if [ ! -e "$RUN/stage1.done" ]; then  # an if, not ||: set -e then stops at a failed stage 1
+    train "$MODEL" "$SETS/sft-set-stage1" "$RUN" 2
+    touch "$RUN/stage1.done"
+  fi
   wait_ready "${WAIT2_HOURS:-1}" || echo "== $(date +%H:%M) tasks still short: stage 2 on what is there"
   build "$SETS/sft-set-stage2" top_up "$SETS/sft-set-stage1"
   train "$(last "$RUN")" "$SETS/sft-set-stage2" "$RUN-final" 1
