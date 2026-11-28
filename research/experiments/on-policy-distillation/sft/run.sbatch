@@ -7,10 +7,10 @@
 #SBATCH --requeue
 #SBATCH --gres=gpu:4,vram:48G  # L40S, A6000 or A100
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16 or too small (60796702-03 failed on RTX 8000)
-#SBATCH --time=2-00:00:00
+#SBATCH --time=12:00:00  # SFT takes about 6-8 h
 #SBATCH --cpus-per-task=20
 # host memory: the 4B pilot peaked at 147 GB on 2 GPUs; the 9B scales to about 330 GB. Submit the 4B with --mem=224G
-#SBATCH --mem=450G
+#SBATCH --mem=400G  # the 9B probe peaked at 212 GB on 2 GPUs
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/sft-%x-%j.out
 set -euo pipefail
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
