@@ -1,6 +1,7 @@
 #!/bin/bash
 # opd/run.sbatch's teacher or rollout job: two GPUs (research/bin/submit takes GPUs from the header only)
-#   ROLE=teacher|rollout LAUNCH=<tag> ROLLOUT_JOBS=<n> CODE=... SFT_SHA=...; teacher -c 6 --mem=120G, rollout -c 14 --mem=160G
+#   ROLE=teacher|rollout LAUNCH=<tag> ROLLOUT_JOBS=<n> CODE=... SFT_SHA=...; teacher -c 12 --mem=120G, rollout -c 16 --mem=160G
+#   (a teacher GPU's bundle takes 3 CPUs, and Ray's small actors can land on any machine)
 #SBATCH --partition=gpu_quad  # not preemptible: losing one job stops the whole cluster
 #SBATCH --gres=gpu:2,vram:48G
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16

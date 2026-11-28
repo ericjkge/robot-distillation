@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1,vram:48G
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16
 #SBATCH --time=03:00:00  # waits for the trainer to start
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8  # a teacher GPU's bundle takes 3, and Ray's small actors can land on any machine
 #SBATCH --mem=64G
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/smoke-split-%x-%j.out
 exec bash /n/data1/hms/dbmi/zitnik/lab/users/edk005/robot-distillation/.wt/on-policy-distillation/research/experiments/on-policy-distillation/smoke/split.sbatch
