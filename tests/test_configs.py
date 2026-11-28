@@ -87,6 +87,7 @@ def test_distillation_batch_and_teacher_context(run_step, gpu):
     teacher = config.distillation.teacher_models.teacher_model.inference
     # verl's check: room for the student's prompt, its full response and one token
     assert teacher.max_model_len == config.data.max_prompt_length + config.data.max_response_length + 1
+    assert teacher.enable_prefix_caching is False  # long prefills stall with it, and each episode is scored once
     if gpu == "generic":  # the teacher's vLLM on 48 GB GPUs
         assert (teacher.gpu_memory_utilization, teacher.max_num_batched_tokens) == (0.9, 2048)
     else:  # PEAR's recipe as it is

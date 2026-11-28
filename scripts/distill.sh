@@ -31,6 +31,9 @@ RUN_ARGS+=(
   # verl requires room for the student's prompt and full response plus one token; the model's own 262,144 leaves a
   # 48 GB GPU no KV cache for it
   distillation.teacher_models.teacher_model.inference.max_model_len=$((MAX_MODEL_LEN + 1))
+  # each episode reaches the teacher once, so its prefix cache never helps; with it, vLLM's prefill of this hybrid
+  # model stalls past about 100k tokens (27B on 2 L40S: a 159k-token episode never returned; without it, 61 s)
+  distillation.teacher_models.teacher_model.inference.enable_prefix_caching=false
   "${TEACHER_HARDWARE_ARGS[@]}"
 )
 pear_exec distill "$@"
