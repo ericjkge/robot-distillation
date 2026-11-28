@@ -12,12 +12,12 @@ GPUS=$(nvidia-smi -L | wc -l)
 CPUS=${NUM_CPUS:-$(nproc)}  # before PEAR's variables: nproc counts OMP_NUM_THREADS, which they set
 LIBERO_SERVERS=${LIBERO_SERVERS:-16}  # simulator processes per rollout machine, rendering on its CPUs
 
-# PEAR places the actor on the "trainer" resource, the replicas on "rollout" and the simulators on "libero"; the
-# teacher's pool takes the GPUs no role claims
+# PEAR places the actor on the "trainer" resource, the replicas on "rollout" and the simulators on "libero"; verl
+# requires trainer.node_label ("trainer") of every training pool, the teacher's included
 case $ROLE in
   trainer) RESOURCES="{\"trainer\": $GPUS}" ;;
   rollout) RESOURCES="{\"rollout\": $GPUS, \"libero\": $LIBERO_SERVERS}" ;;
-  teacher) RESOURCES="{}" ;;
+  teacher) RESOURCES="{\"trainer\": $GPUS}" ;;  # a training pool, under trainer.node_label
   all) RESOURCES="{\"trainer\": ${TRAINER_GPUS:-0}, \"rollout\": ${ROLLOUT_GPUS:-$GPUS}, \"libero\": $LIBERO_SERVERS}" ;;
   *) echo "unknown role $ROLE" >&2; exit 1 ;;
 esac

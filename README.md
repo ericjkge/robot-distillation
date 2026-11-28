@@ -68,9 +68,9 @@ Ray steps (`collect`, `distill`, `eval`) start through `scripts/run.sh`:
 - **Slurm:** `sbatch [resources] scripts/run.sh <step>` starts Ray over the job's machines. `ROLES` names each machine's
   role, one per machine in node order: `trainer`, `rollout` or `teacher`.
 - **An existing Ray cluster:** start `scripts/ray_node.sh <role> [head address]` on every machine, set `RAY_ADDRESS`
-  and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step. The machines can belong to separate
-  jobs. Where NCCL cannot connect over RoCE (`socketFinalizeAccept ... wrong type`), export `NCCL_IB_DISABLE=1` on
-  every machine to use TCP.
+  and `ROLLOUT_NNODES`, `TRAINER_NNODES` and `TEACHER_NNODES`, then run the step. On a cluster that allows one machine
+  per job, `scripts/ray_job.sh` forms this cluster from separate jobs. Where NCCL cannot connect over RoCE
+  (`socketFinalizeAccept ... wrong type`), export `NCCL_IB_DISABLE=1` on every machine to use TCP.
 
 Each run starts its own Ray cluster (a free port, or `PORT`), so runs can share a machine.
 
