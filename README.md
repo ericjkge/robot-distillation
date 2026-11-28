@@ -110,6 +110,17 @@ python -m opd.report summary $R/eval-9b --tokenizer $M/Qwen3.5-9B [--vs $R/eval-
 python -m opd.report plot $R/plots $R/eval-9b $R/eval-sft-9b   # needs matplotlib
 ```
 
+**Bonus: general capability.** `scripts/eval_general.sh` runs PEAR's general-capability evaluation unchanged (nine
+EvalScope benchmarks: math, science, coding, instruction following, vision), so a student's retention of general
+skills compares with PEAR's numbers; `tests/test_eval_general.py` checks that it starts exactly what PEAR's recipe
+starts. Install its environment and datasets once (`bash third_party/pear/scripts/install.sh evalscope`), then:
+
+```bash
+MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> NAME=<served name> RUN=$R/general-9b \
+  bash scripts/eval_general.sh serve                     # on every GPU machine, left running
+bash scripts/eval_general.sh run <host>:8000,<host>:8001  # on one of them, with the same variables
+```
+
 **Hardware.** `GPU=h100` or `GPU=gb300` uses PEAR's tuned recipes. The default, `GPU=generic`, runs on any CUDA GPU
 without PEAR's custom kernels and fits the distillation teacher on two 48 GB GPUs. Add a profile as a file in
 `configs/hardware/`.
