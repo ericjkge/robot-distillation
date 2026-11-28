@@ -3,8 +3,7 @@
 # form one Ray cluster (opd/node.sh): this trainer job (4 GPUs), a teacher job (2 GPUs, TP 2) and ROLLOUT_JOBS rollout
 # jobs (2 GPUs each, one 9B replica per GPU, 8 episodes each at once). Settings: the note's OPD configuration table.
 #   trainer: ROLE=trainer ROLLOUT_JOBS=<n> CODE=47200a9-mbfix SFT_SHA=bf9b274
-#   others:  ROLE=teacher|rollout TRAINER_JOB=<trainer id> (same CODE, SFT_SHA, ROLLOUT_JOBS),
-#            --dependency=after:<trainer id> --gres=gpu:2,vram:48G; teacher -c 6 --mem=120G, rollout -c 14 --mem=160G
+#   others:  opd/node.sbatch (2 GPUs), ROLE=teacher|rollout TRAINER_JOB=<trainer id>, --dependency=after:<trainer id>
 # STEPS is a cap: the run is stopped by hand. PEAR checkpoints every update and verl resumes from the latest.
 #SBATCH --partition=gpu_quad  # not preemptible: losing one job stops the whole cluster
 #SBATCH --gres=gpu:4,vram:48G

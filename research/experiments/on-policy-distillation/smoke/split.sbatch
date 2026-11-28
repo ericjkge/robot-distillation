@@ -2,8 +2,8 @@
 # opd/node.sh end to end at smoke scale: part 3's distillation (Qwen3.5-4B student and teacher, 2 episodes, 2 updates)
 # as three jobs on separate machines: trainer (2 GPUs), teacher (1) and rollout (1).
 #   trainer: ROLE=trainer CODE_SHA=<code>
-#   others:  ROLE=teacher|rollout TRAINER_JOB=<trainer id> CODE_SHA=<code>, --dependency=after:<trainer id>
-#            --gres=gpu:1,vram:48G -c 4 --mem=64G
+#   others:  ROLE=teacher|rollout TRAINER_JOB=<trainer id> CODE_SHA=<code>, --dependency=after:<trainer id>,
+#            submitted with smoke/split-node.sbatch
 #SBATCH --partition=gpu_requeue
 #SBATCH --gres=gpu:2,vram:48G
 #SBATCH --exclude=compute-g-17-[145-161,165],compute-gc-17-[245-247]  # Quadro RTX 8000, V100, A100 MIG: no bf16
