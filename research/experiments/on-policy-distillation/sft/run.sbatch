@@ -13,6 +13,8 @@
 #SBATCH --mem=400G  # the 9B probe peaked at 212 GB on 2 GPUs
 #SBATCH --output=/n/scratch/users/e/edk005/vla/on-policy-distillation/logs/sft-%x-%j.out
 set -euo pipefail
+# a second copy of the job waits in another partition (sft/race.sh): it leaves if a copy already runs
+if squeue -h -u "$USER" -n "$SLURM_JOB_NAME" -t RUNNING -o %i | grep -vqx "$SLURM_JOB_ID"; then echo "another copy runs"; exit 0; fi
 OUT=/n/scratch/users/e/edk005/vla/on-policy-distillation
 STUDENT=${STUDENT:?Qwen3.5-9B | Qwen3.5-4B}
 CODE_SHA=${CODE_SHA:?the commit of the code to run}
