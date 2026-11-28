@@ -39,4 +39,4 @@ bash "$HERE/node.sh" env TRAINER_NNODES=1 TEACHER_NNODES=1 ROLLOUT_NNODES="$ROLL
   trainer.v1.sampler.max_off_policy_threshold=1 trainer.val_before_train=false \
   actor_rollout_ref.actor.fsdp_config.offload_policy=true actor_rollout_ref.actor.fsdp_config.optimizer_offload=false \
   actor_rollout_ref.actor.fsdp_config.optimizer_offload_step=false \
-  $T.max_model_len=164097 $T.gpu_memory_utilization=0.9 $T.max_num_batched_tokens=2048 $T.enable_prefix_caching=false  # as main
+  $T.max_model_len=164097 $T.gpu_memory_utilization=0.85 $T.max_num_batched_tokens=2048 $T.enable_prefix_caching=false  # as main

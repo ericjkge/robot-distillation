@@ -37,7 +37,7 @@ The 4B student is not run (human, Nov 23).
 | Loss | k1 reverse KL as a per-token policy gradient, no task reward; lr 1e-6 (PEAR's) | Algorithm 1 |
 | Rollout | xhigh effort, temperature 1.0, top-p 1.0, n = 1, 4,096 + 160,000 tokens; 9B replicas TP 1, memory 0.85 | PEAR's training settings |
 | Trainer | 4 GPUs, Ulysses SP 4 (41,024 tokens per GPU), fused head, FSDP2 with `offload_policy`, verl patch 0045 | fits 48 GB; 0045: the 9B's untied lm_head in the root unit |
-| Teacher | TP 2, `max_model_len` 164,097, memory 0.9, prefill chunks 2,048, no prefix caching | fits 2 x 48 GB (60999063); with prefix caching a 159k-token prefill stalls (61014031: 61 s without) |
+| Teacher | TP 2, `max_model_len` 164,097, memory 0.85, prefill chunks 2,048, no prefix caching | fits 2 x 48 GB (61021306: 159k tokens in 62 s, 80 images in 74 s, peak 43.1 of 46 GB); with prefix caching a 159k-token prefill stalls (61014031: 61 s without) |
 
 **Now running or queued**
 
