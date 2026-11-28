@@ -89,13 +89,20 @@ MODEL=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/teacher bash scripts/run.sh scripts
 python -m opd.select_episodes --per-task 25 --out $R/sft-set $R/teacher [<Hub dataset download> ...]
 MODEL=$M/Qwen3.5-9B EPISODES_DIR=$R/sft-set RUN=$R/sft-9b bash scripts/sft.sh
 
-# 3. on-policy distillation: here three machines, one per role
+# 3. on-policy distillation from the SFT checkpoint, e.g. one 8-GPU machine: 4 trainer, 2 rollout, 2 teacher GPUs
+TRAINER_GPUS=4 ROLLOUT_GPUS=2 TEACHER_GPUS=2 MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<SFT checkpoint> \
+  TEACHER=$M/Qwen3.8-27B-PEAR-LIBERO_only RUN=$R/opd-9b STEPS=<updates> bash scripts/run.sh scripts/distill.sh
+# or three machines, one per role
 sbatch --nodes=3 --export=ALL,ROLES="trainer rollout teacher",MODEL_FILE=configs/models/qwen3_5_9b.sh,\
 MODEL=<SFT checkpoint>,TEACHER=$M/Qwen3.8-27B-PEAR-LIBERO_only,RUN=$R/opd-9b scripts/run.sh scripts/distill.sh
 
 # 4. evaluation: BENCH=libero (default), libero_pro or libero_plus
 MODEL_FILE=configs/models/qwen3_5_9b.sh MODEL=<model> RUN=$R/eval-9b bash scripts/run.sh scripts/eval.sh
 ```
+
+Our SFT checkpoints are on the Hub (`hf download eddykang06/qwen3.5-9b-pear-libero-sft --local-dir <dir>`).
+Distillation checkpoints every update and resumes from the latest when restarted with the same `RUN`. Keep the
+default `GPU=generic` for it: it fits the teacher on two GPUs of 48 GB or more.
 
 Evaluation writes per-episode records to `$RUN/val_dumps/eval_<step>.jsonl` and success rates to
 `eval_<step>_summary.json`, with 256,000 response tokens per episode as in PEAR's evaluation (training uses 160,000).
