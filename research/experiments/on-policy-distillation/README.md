@@ -26,6 +26,8 @@ The 4B student is not run (human, Nov 23).
 
 *Updated 2026-11-23 23:45. The full history of fixes, submissions and earlier notes is in git, up to commit e1643d7.*
 
+**SFT** (60955095, queued, est. 01:42 Nov 28): standard single-stage SFT (the human, Nov 27, replacing the two-stage scheme): `sft/staged.sh` waits, GPUs held, until every task is complete on the Hub (at most 3 h, then trains on what is there), draws up to 25 successes per task (seed 0) over every source, trains 3 epochs and names the last checkpoint in `sft.final`. A draw at 23:50 gave 812 episodes (o2 704, runpod 87, sophie 21; 30 of 37 tasks at 25); Sophie's last ~38 trials est. done about 02:30.
+
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
 
 | Setting | Value | Why |
