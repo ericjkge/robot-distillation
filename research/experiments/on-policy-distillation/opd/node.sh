@@ -8,6 +8,10 @@
 set -euo pipefail
 : "${ROLE:?trainer | teacher | rollout}" "${CLUSTER:?}" "${NODES:?}"
 export NCCL_IB_DISABLE=1 NCCL_SOCKET_IFNAME=^lo,idrac
+# two jobs can share a machine without seeing each other's GPUs: one NCCL host per job, so that NCCL connects jobs
+# over the network instead of GPU-to-GPU (a trainer and a rollout job on one machine failed with "unhandled cuda error")
+NCCL_HOSTID=$(hostname)-${SLURM_JOB_ID:?}
+export NCCL_HOSTID
 PY=$WORK_DIR/envs/verl/bin/python
 mkdir -p "$CLUSTER"
 
