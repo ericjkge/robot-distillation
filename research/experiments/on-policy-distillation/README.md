@@ -46,6 +46,8 @@ The 4B student is not run (human, Nov 23).
 
 **11:27 Nov 28:** the `gpu` copies wait on `AssocGrpGRESRunMinutes`: a per-user cap of 12,000 GPU-minutes held at once (GPUs x time left), at 25,013 now, mostly the six 1-GPU `learned-hierarchy` jobs (another direction, about 2.6 d left each) and SFT; it is not enforced on `gpu_quad` (SFT started at 09:12 above it). So `gpu` starts nothing of ours until those end; the copies stay queued. `gpu_quad` estimates: trainer and teacher 09:40 Nov 30, rollouts 07:00 and 09:30 Nov 30. SFT at step 27 of stage 1's 50.
 
+**12:45 Nov 28, OPD for a teammate's GPUs** (the human: main usable by others, a teammate to queue OPD off O2). Main 885f8b4: the README's distillation on one 8-GPU machine (4 trainer, 2 rollout, 2 teacher GPUs; the mode of smoke 60940876), the SFT checkpoints' Hub repo, resume from the latest checkpoint, `GPU=generic`; main's defaults already match this run (xhigh, batch 32, the teacher's settings, the actor's state on the CPU, Algorithm 1's schedule). Suite in a fresh clone, verl patched: 100 passed (`test_report` needs matplotlib). O2 estimates at 12:30: trainer Dec 2, teacher Dec 1, rollouts Nov 30; the `gpu` copies 22:29 today.
+
 **Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
