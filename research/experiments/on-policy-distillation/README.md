@@ -40,6 +40,8 @@ The 4B student is not run (human, Nov 23).
 
 **11:05 Nov 28, OPD from the local SFT checkpoint** (the human: no Hub round trip, OPD as soon as possible after SFT): the trainer reads `sft.final`'s directory directly, the same files `sft/live.py` uploads (publish.py adds only the card); `opd/sft_from_hub.py` removed. Trainer resubmitted as **61074728** (same header, launch and settings); 61073928 cancelled.
 
+**10:56 Nov 28:** SFT at step 21 of stage 1's 50 (about 4.3 min a step; SFT done about 15:30). Slurm's estimates moved later as our fair share fell (285k to 252k while SFT runs): rollouts 05:00 and 08:20 Nov 29, teacher 08:40 Nov 29, trainer 07:00 Nov 30 (at 10:45: 13:40 to 21:12 today). Estimates have moved by hours either way before (60955095), so kept.
+
 **Bonus eval** (the human, Nov 28; later, not before Nov 30): general capability with PEAR's own recipe, main 39c77b0 `scripts/eval_general.sh` (nine EvalScope benchmarks, PEAR's sampling, repeats and budgets, each model's own chat template); `tests/test_eval_general.py` checks it starts exactly what PEAR's recipe starts (a changed server setting fails it). Its environment (`install.sh evalscope`) is not installed yet.
 
 **OPD configuration** (9B from the SFT checkpoint; `opd/run.sbatch`, composed on CPU Nov 27 18:55; main 4e259bc has the same defaults)
